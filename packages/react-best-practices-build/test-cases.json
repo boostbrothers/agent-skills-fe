@@ -29,7 +29,7 @@
     "type": "good",
     "code": "let didInit = false\n\nfunction Comp() {\n  useEffect(() => {\n    if (didInit) return\n    didInit = true\n    loadFromStorage()\n    checkAuthToken()\n  }, [])\n\n  // ...\n}",
     "language": "tsx",
-    "description": "once per app load"
+    "description": "once per app load - preferred for app-wide initialization"
   },
   {
     "ruleId": "",

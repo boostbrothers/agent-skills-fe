@@ -22,7 +22,7 @@ function Comp() {
 }
 ```
 
-**Correct (once per app load):**
+**Correct (once per app load - preferred for app-wide initialization):**
 
 ```tsx
 let didInit = false
@@ -38,5 +38,31 @@ function Comp() {
   // ...
 }
 ```
+
+Use module-level `let` when initialization must run exactly once for the entire app, regardless of how many times or where the component is used.
+
+**Alternative (once per component instance - use when initialization is component-specific):**
+
+```tsx
+function Comp() {
+  const didInit = useRef(false)
+  
+  useEffect(() => {
+    if (didInit.current) return
+    didInit.current = true
+    loadFromStorage()
+    checkAuthToken()
+  }, [])
+
+  // ...
+}
+```
+
+Use `useRef` when initialization should run once per component instance. If `Comp` is rendered multiple times, each instance will run initialization once. This is suitable for component-specific setup, not app-wide initialization.
+
+**Best Practice:**
+
+- **App-wide initialization** (analytics, auth, storage): Use module-level `let`
+- **Component-specific initialization** (local subscriptions, timers): Use `useRef`
 
 Reference: [Initializing the application](https://react.dev/learn/you-might-not-need-an-effect#initializing-the-application)
