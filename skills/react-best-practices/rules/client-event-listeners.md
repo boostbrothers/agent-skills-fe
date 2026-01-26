@@ -2,12 +2,12 @@
 title: Deduplicate Global Event Listeners
 impact: LOW
 impactDescription: single listener for N components
-tags: client, swr, event-listeners, subscription
+tags: client, swr, jotai, event-listeners, subscription
 ---
 
 ## Deduplicate Global Event Listeners
 
-Use `useSWRSubscription()` to share global event listeners across component instances.
+Use state management libraries like `jotai` or `useSWRSubscription()` to share global event listeners across component instances.
 
 **Incorrect (N instances = N listeners):**
 
@@ -63,6 +63,67 @@ function useKeyboardShortcut(key: string, callback: () => void) {
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   })
+}
+
+function Profile() {
+  // Multiple shortcuts will share the same listener
+  useKeyboardShortcut('p', () => { /* ... */ }) 
+  useKeyboardShortcut('k', () => { /* ... */ })
+  // ...
+}
+```
+
+**Correct (with Jotai - N instances = 1 listener, preferred if using Jotai):**
+
+```tsx
+import { useEffect } from 'react'
+import { atom, useAtom } from 'jotai'
+
+// 1. Module-level Map to track callbacks per key
+const keyCallbacks = new Map<string, Set<() => void>>()
+
+// 2. Atom that manages the listener lifecycle
+const globalKeydownAtom = atom(null)
+
+// Runs when first subscriber mounts (reference counting)
+globalKeydownAtom.onMount = () => {
+  const handler = (e: KeyboardEvent) => {
+    if (e.metaKey && keyCallbacks.has(e.key)) {
+      keyCallbacks.get(e.key)!.forEach((cb) => cb())
+    }
+  }
+  
+  window.addEventListener('keydown', handler)
+  console.log('Global Listener Attached')
+
+  // Cleanup: runs when all subscribers unmount
+  return () => {
+    window.removeEventListener('keydown', handler)
+    console.log('Global Listener Removed')
+  }
+}
+
+// 3. Custom hook
+export function useKeyboardShortcut(key: string, callback: () => void) {
+  // Subscribing to this atom activates the listener (reference counting)
+  useAtom(globalKeydownAtom)
+
+  useEffect(() => {
+    if (!keyCallbacks.has(key)) {
+      keyCallbacks.set(key, new Set())
+    }
+    keyCallbacks.get(key)!.add(callback)
+
+    return () => {
+      const set = keyCallbacks.get(key)
+      if (set) {
+        set.delete(callback)
+        if (set.size === 0) {
+          keyCallbacks.delete(key)
+        }
+      }
+    }
+  }, [key, callback])
 }
 
 function Profile() {
