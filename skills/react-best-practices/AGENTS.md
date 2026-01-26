@@ -486,7 +486,7 @@ export default function RootLayout({ children }) {
 }
 ```
 
-**Correct: loads after hydration**
+**Correct: Next.js - loads after hydration**
 
 ```tsx
 import dynamic from 'next/dynamic'
@@ -508,11 +508,32 @@ export default function RootLayout({ children }) {
 }
 ```
 
+**Correct: React / Vite / CRA - loads after mount**
+
+```tsx
+import { lazy, Suspense } from 'react'
+
+const Analytics = lazy(
+  () => import('@vercel/analytics/react').then(m => ({ default: m.Analytics }))
+)
+
+export default function App({ children }) {
+  return (
+    <div>
+      {children}
+      <Suspense fallback={null}>
+        <Analytics />
+      </Suspense>
+    </div>
+  )
+}
+```
+
 ### 2.4 Dynamic Imports for Heavy Components
 
 **Impact: CRITICAL (directly affects TTI and LCP)**
 
-Use `next/dynamic` to lazy-load large components not needed on initial render.
+Use dynamic imports to lazy-load large components not needed on initial render.
 
 **Incorrect: Monaco bundles with main chunk ~300KB**
 
@@ -524,7 +545,7 @@ function CodePanel({ code }: { code: string }) {
 }
 ```
 
-**Correct: Monaco loads on demand**
+**Correct: Next.js - Monaco loads on demand**
 
 ```tsx
 import dynamic from 'next/dynamic'
@@ -536,6 +557,24 @@ const MonacoEditor = dynamic(
 
 function CodePanel({ code }: { code: string }) {
   return <MonacoEditor value={code} />
+}
+```
+
+**Correct: React / Vite / CRA - Monaco loads on demand**
+
+```tsx
+import { lazy, Suspense } from 'react'
+
+const MonacoEditor = lazy(
+  () => import('./monaco-editor').then(m => ({ default: m.MonacoEditor }))
+)
+
+function CodePanel({ code }: { code: string }) {
+  return (
+    <Suspense fallback={<div>Loading editor...</div>}>
+      <MonacoEditor value={code} />
+    </Suspense>
+  )
 }
 ```
 

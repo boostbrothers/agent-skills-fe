@@ -26,7 +26,7 @@ export default function RootLayout({ children }) {
 }
 ```
 
-**Correct (loads after hydration):**
+**Correct (Next.js - loads after hydration):**
 
 ```tsx
 import dynamic from 'next/dynamic'
@@ -44,6 +44,27 @@ export default function RootLayout({ children }) {
         <Analytics />
       </body>
     </html>
+  )
+}
+```
+
+**Correct (React / Vite / CRA - loads after mount):**
+
+```tsx
+import { lazy, Suspense } from 'react'
+
+const Analytics = lazy(
+  () => import('@vercel/analytics/react').then(m => ({ default: m.Analytics }))
+)
+
+export default function App({ children }) {
+  return (
+    <div>
+      {children}
+      <Suspense fallback={null}>
+        <Analytics />
+      </Suspense>
+    </div>
   )
 }
 ```

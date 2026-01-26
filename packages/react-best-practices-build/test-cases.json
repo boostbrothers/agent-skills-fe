@@ -157,7 +157,15 @@
     "type": "good",
     "code": "import dynamic from 'next/dynamic'\n\nconst Analytics = dynamic(\n  () => import('@vercel/analytics/react').then(m => m.Analytics),\n  { ssr: false }\n)\n\nexport default function RootLayout({ children }) {\n  return (\n    <html>\n      <body>\n        {children}\n        <Analytics />\n      </body>\n    </html>\n  )\n}",
     "language": "tsx",
-    "description": "loads after hydration"
+    "description": "Next.js - loads after hydration"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Defer Non-Critical Third-Party Libraries",
+    "type": "good",
+    "code": "import { lazy, Suspense } from 'react'\n\nconst Analytics = lazy(\n  () => import('@vercel/analytics/react').then(m => ({ default: m.Analytics }))\n)\n\nexport default function App({ children }) {\n  return (\n    <div>\n      {children}\n      <Suspense fallback={null}>\n        <Analytics />\n      </Suspense>\n    </div>\n  )\n}",
+    "language": "tsx",
+    "description": "React / Vite / CRA - loads after mount"
   },
   {
     "ruleId": "",
@@ -173,7 +181,15 @@
     "type": "good",
     "code": "import dynamic from 'next/dynamic'\n\nconst MonacoEditor = dynamic(\n  () => import('./monaco-editor').then(m => m.MonacoEditor),\n  { ssr: false }\n)\n\nfunction CodePanel({ code }: { code: string }) {\n  return <MonacoEditor value={code} />\n}",
     "language": "tsx",
-    "description": "Monaco loads on demand"
+    "description": "Next.js - Monaco loads on demand"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Dynamic Imports for Heavy Components",
+    "type": "good",
+    "code": "import { lazy, Suspense } from 'react'\n\nconst MonacoEditor = lazy(\n  () => import('./monaco-editor').then(m => ({ default: m.MonacoEditor }))\n)\n\nfunction CodePanel({ code }: { code: string }) {\n  return (\n    <Suspense fallback={<div>Loading editor...</div>}>\n      <MonacoEditor value={code} />\n    </Suspense>\n  )\n}",
+    "language": "tsx",
+    "description": "React / Vite / CRA - Monaco loads on demand"
   },
   {
     "ruleId": "",
