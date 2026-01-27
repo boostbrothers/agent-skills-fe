@@ -20,18 +20,23 @@ Comprehensive performance optimization guide for React and Next.js applications,
 
 ## Table of Contents
 
+0. [Section 0](#0-section-0) — **HIGH**
+   - 0.1 [Built-in React Hooks Correct Usage Patterns](#01-built-in-react-hooks-correct-usage-patterns)
 1. [Eliminating Waterfalls](#1-eliminating-waterfalls) — **CRITICAL**
    - 1.1 [Defer Await Until Needed](#11-defer-await-until-needed)
    - 1.2 [Dependency-Based Parallelization](#12-dependency-based-parallelization)
    - 1.3 [Prevent Waterfall Chains in API Routes](#13-prevent-waterfall-chains-in-api-routes)
    - 1.4 [Promise.all() for Independent Operations](#14-promiseall-for-independent-operations)
    - 1.5 [Strategic Suspense Boundaries](#15-strategic-suspense-boundaries)
+   - 1.6 [Use the React use() API for Data and Context](#16-use-the-react-use-api-for-data-and-context)
 2. [Bundle Size Optimization](#2-bundle-size-optimization) — **CRITICAL**
    - 2.1 [Avoid Barrel File Imports](#21-avoid-barrel-file-imports)
-   - 2.2 [Conditional Module Loading](#22-conditional-module-loading)
-   - 2.3 [Defer Non-Critical Third-Party Libraries](#23-defer-non-critical-third-party-libraries)
-   - 2.4 [Dynamic Imports for Heavy Components](#24-dynamic-imports-for-heavy-components)
-   - 2.5 [Preload Based on User Intent](#25-preload-based-on-user-intent)
+   - 2.2 [Avoid Namespace React Imports](#22-avoid-namespace-react-imports)
+   - 2.3 [Conditional Module Loading](#23-conditional-module-loading)
+   - 2.4 [Defer Non-Critical Third-Party Libraries](#24-defer-non-critical-third-party-libraries)
+   - 2.5 [Dynamic Imports for Heavy Components](#25-dynamic-imports-for-heavy-components)
+   - 2.6 [Preload Based on User Intent](#26-preload-based-on-user-intent)
+   - 2.7 [Use Explicit Type Imports](#27-use-explicit-type-imports)
 3. [Server-Side Performance](#3-server-side-performance) — **HIGH**
    - 3.1 [Authenticate Server Actions Like API Routes](#31-authenticate-server-actions-like-api-routes)
    - 3.2 [Avoid Duplicate Serialization in RSC Props](#32-avoid-duplicate-serialization-in-rsc-props)
@@ -52,22 +57,25 @@ Comprehensive performance optimization guide for React and Next.js applications,
    - 5.4 [Extract Default Non-primitive Parameter Value from Memoized Component to Constant](#54-extract-default-non-primitive-parameter-value-from-memoized-component-to-constant)
    - 5.5 [Extract to Memoized Components](#55-extract-to-memoized-components)
    - 5.6 [Narrow Effect Dependencies](#56-narrow-effect-dependencies)
-   - 5.7 [Put Interaction Logic in Event Handlers](#57-put-interaction-logic-in-event-handlers)
-   - 5.8 [Subscribe to Derived State](#58-subscribe-to-derived-state)
-   - 5.9 [Use Functional setState Updates](#59-use-functional-setstate-updates)
-   - 5.10 [Use Lazy State Initialization](#510-use-lazy-state-initialization)
-   - 5.11 [Use Transitions for Non-Urgent Updates](#511-use-transitions-for-non-urgent-updates)
-   - 5.12 [Use useRef for Transient Values](#512-use-useref-for-transient-values)
+   - 5.7 [Provide Default Values for Optional Props](#57-provide-default-values-for-optional-props)
+   - 5.8 [Put Interaction Logic in Event Handlers](#58-put-interaction-logic-in-event-handlers)
+   - 5.9 [startTransition Correct Usage Patterns](#59-starttransition-correct-usage-patterns)
+   - 5.10 [Subscribe to Derived State](#510-subscribe-to-derived-state)
+   - 5.11 [Use Functional setState Updates](#511-use-functional-setstate-updates)
+   - 5.12 [Use Lazy State Initialization](#512-use-lazy-state-initialization)
+   - 5.13 [Use Transitions for Non-Urgent Updates](#513-use-transitions-for-non-urgent-updates)
+   - 5.14 [Use useRef for Transient Values](#514-use-useref-for-transient-values)
 6. [Rendering Performance](#6-rendering-performance) — **MEDIUM**
    - 6.1 [Animate SVG Wrapper Instead of SVG Element](#61-animate-svg-wrapper-instead-of-svg-element)
    - 6.2 [CSS content-visibility for Long Lists](#62-css-content-visibility-for-long-lists)
    - 6.3 [Hoist Static JSX Elements](#63-hoist-static-jsx-elements)
    - 6.4 [Optimize SVG Precision](#64-optimize-svg-precision)
    - 6.5 [Prevent Hydration Mismatch Without Flickering](#65-prevent-hydration-mismatch-without-flickering)
-   - 6.6 [Suppress Expected Hydration Mismatches](#66-suppress-expected-hydration-mismatches)
-   - 6.7 [Use Activity Component for Show/Hide](#67-use-activity-component-for-showhide)
-   - 6.8 [Use Explicit Conditional Rendering](#68-use-explicit-conditional-rendering)
-   - 6.9 [Use useTransition Over Manual Loading States](#69-use-usetransition-over-manual-loading-states)
+   - 6.6 [React DOM APIs Correct Usage Patterns](#66-react-dom-apis-correct-usage-patterns)
+   - 6.7 [Suppress Expected Hydration Mismatches](#67-suppress-expected-hydration-mismatches)
+   - 6.8 [Use Activity Component for Show/Hide](#68-use-activity-component-for-showhide)
+   - 6.9 [Use Explicit Conditional Rendering](#69-use-explicit-conditional-rendering)
+   - 6.10 [Use useTransition Over Manual Loading States](#610-use-usetransition-over-manual-loading-states)
 7. [JavaScript Performance](#7-javascript-performance) — **LOW-MEDIUM**
    - 7.1 [Avoid Layout Thrashing](#71-avoid-layout-thrashing)
    - 7.2 [Build Index Maps for Repeated Lookups](#72-build-index-maps-for-repeated-lookups)
@@ -78,13 +86,336 @@ Comprehensive performance optimization guide for React and Next.js applications,
    - 7.7 [Early Length Check for Array Comparisons](#77-early-length-check-for-array-comparisons)
    - 7.8 [Early Return from Functions](#78-early-return-from-functions)
    - 7.9 [Hoist RegExp Creation](#79-hoist-regexp-creation)
-   - 7.10 [Use Loop for Min/Max Instead of Sort](#710-use-loop-for-minmax-instead-of-sort)
-   - 7.11 [Use Set/Map for O(1) Lookups](#711-use-setmap-for-o1-lookups)
-   - 7.12 [Use toSorted() Instead of sort() for Immutability](#712-use-tosorted-instead-of-sort-for-immutability)
+   - 7.10 [Prefer dayjs Over Native Date](#710-prefer-dayjs-over-native-date)
+   - 7.11 [Use Loop for Min/Max Instead of Sort](#711-use-loop-for-minmax-instead-of-sort)
+   - 7.12 [Use Set/Map for O(1) Lookups](#712-use-setmap-for-o1-lookups)
+   - 7.13 [Use toSorted() Instead of sort() for Immutability](#713-use-tosorted-instead-of-sort-for-immutability)
 8. [Advanced Patterns](#8-advanced-patterns) — **LOW**
    - 8.1 [Initialize App Once, Not Per Mount](#81-initialize-app-once-not-per-mount)
    - 8.2 [Store Event Handlers in Refs](#82-store-event-handlers-in-refs)
    - 8.3 [useEffectEvent for Stable Callback Refs](#83-useeffectevent-for-stable-callback-refs)
+
+---
+
+## 0. Section 0
+
+**Impact: HIGH**
+
+### 0.1 Built-in React Hooks Correct Usage Patterns
+
+**Impact: HIGH (prevents bugs, infinite loops, memory leaks)**
+
+React hooks have specific rules and patterns that, when violated, cause bugs, infinite loops, or memory leaks. This guide covers common mistakes and correct patterns.
+
+**Incorrect: object mutation**
+
+```tsx
+function UserForm() {
+  const [user, setUser] = useState({ name: '', email: '' })
+  
+  const updateName = (name: string) => {
+    // ❌ Mutating existing state object
+    user.name = name
+    setUser(user)
+  }
+}
+```
+
+**Correct: immutable update**
+
+```tsx
+function UserForm() {
+  const [user, setUser] = useState({ name: '', email: '' })
+  
+  const updateName = (name: string) => {
+    // ✅ Create new object
+    setUser(prev => ({ ...prev, name }))
+  }
+}
+```
+
+**Incorrect: stale closure**
+
+```tsx
+function Counter() {
+  const [count, setCount] = useState(0)
+  
+  const incrementThreeTimes = () => {
+    // ❌ All three use same stale count value
+    setCount(count + 1)
+    setCount(count + 1)
+    setCount(count + 1)
+    // Result: count increases by 1, not 3
+  }
+}
+```
+
+**Correct: functional update**
+
+```tsx
+function Counter() {
+  const [count, setCount] = useState(0)
+  
+  const incrementThreeTimes = () => {
+    // ✅ Each update uses latest value
+    setCount(c => c + 1)
+    setCount(c => c + 1)
+    setCount(c => c + 1)
+    // Result: count increases by 3
+  }
+}
+```
+
+**Incorrect: missing cleanup**
+
+```tsx
+function ChatRoom({ roomId }: { roomId: string }) {
+  useEffect(() => {
+    const connection = createConnection(roomId)
+    connection.connect()
+    // ❌ Connection never closed - memory leak
+  }, [roomId])
+}
+```
+
+**Correct: proper cleanup**
+
+```tsx
+function ChatRoom({ roomId }: { roomId: string }) {
+  useEffect(() => {
+    const connection = createConnection(roomId)
+    connection.connect()
+    
+    // ✅ Cleanup on unmount or roomId change
+    return () => connection.disconnect()
+  }, [roomId])
+}
+```
+
+**Incorrect: infinite loop**
+
+```tsx
+function DataFetcher({ url }: { url: string }) {
+  const [data, setData] = useState(null)
+  
+  useEffect(() => {
+    fetch(url)
+      .then(res => res.json())
+      .then(setData)
+  }) // ❌ Missing dependency array - runs every render
+}
+```
+
+**Correct: proper dependencies**
+
+```tsx
+function DataFetcher({ url }: { url: string }) {
+  const [data, setData] = useState(null)
+  
+  useEffect(() => {
+    let cancelled = false
+    
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        if (!cancelled) setData(data)
+      })
+    
+    // ✅ Prevent state update after unmount
+    return () => { cancelled = true }
+  }, [url]) // ✅ Only re-run when url changes
+}
+```
+
+**Incorrect: setting state for derived values**
+
+```tsx
+function FilteredList({ items, filter }: Props) {
+  const [filteredItems, setFilteredItems] = useState<Item[]>([])
+  
+  // ❌ Unnecessary effect and state
+  useEffect(() => {
+    setFilteredItems(items.filter(item => item.name.includes(filter)))
+  }, [items, filter])
+}
+```
+
+**Correct: compute during render**
+
+```tsx
+function FilteredList({ items, filter }: Props) {
+  // ✅ Derived value computed directly
+  const filteredItems = useMemo(
+    () => items.filter(item => item.name.includes(filter)),
+    [items, filter]
+  )
+}
+```
+
+**Incorrect: ref in render**
+
+```tsx
+function Timer() {
+  const countRef = useRef(0)
+  
+  // ❌ Reading/writing ref during render causes inconsistencies
+  countRef.current += 1
+  
+  return <div>Render count: {countRef.current}</div>
+}
+```
+
+**Correct: ref in effects/handlers**
+
+```tsx
+function Timer() {
+  const [count, setCount] = useState(0)
+  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+  
+  useEffect(() => {
+    // ✅ Ref used in effect
+    intervalRef.current = setInterval(() => {
+      setCount(c => c + 1)
+    }, 1000)
+    
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current)
+    }
+  }, [])
+  
+  return <div>Count: {count}</div>
+}
+```
+
+**Incorrect: wrong dependency**
+
+```tsx
+function SearchResults({ query, data }: Props) {
+  const results = useMemo(() => {
+    return data.filter(item => item.name.includes(query))
+  }, [query]) // ❌ Missing 'data' dependency
+}
+```
+
+**Correct: all dependencies**
+
+```tsx
+function SearchResults({ query, data }: Props) {
+  const results = useMemo(() => {
+    return data.filter(item => item.name.includes(query))
+  }, [query, data]) // ✅ All dependencies included
+}
+```
+
+**Incorrect: unnecessary memoization**
+
+```tsx
+function Greeting({ name }: { name: string }) {
+  // ❌ Simple concatenation doesn't need memoization
+  const greeting = useMemo(() => `Hello, ${name}!`, [name])
+  
+  // ❌ Inline callback doesn't need useCallback
+  const handleClick = useCallback(() => {
+    console.log('clicked')
+  }, [])
+  
+  return <button onClick={handleClick}>{greeting}</button>
+}
+```
+
+**Correct: memoize expensive operations**
+
+```tsx
+function DataGrid({ rows, sortConfig }: Props) {
+  // ✅ Expensive sorting operation
+  const sortedRows = useMemo(() => {
+    return [...rows].sort((a, b) => {
+      // Complex sorting logic
+    })
+  }, [rows, sortConfig])
+  
+  // ✅ Callback passed to memoized child
+  const handleRowClick = useCallback((row: Row) => {
+    onRowSelect(row.id)
+  }, [onRowSelect])
+  
+  return <MemoizedTable rows={sortedRows} onRowClick={handleRowClick} />
+}
+```
+
+**Incorrect: missing provider**
+
+```tsx
+const ThemeContext = createContext<Theme | null>(null)
+
+function Button() {
+  // ❌ Could be null if no provider exists
+  const theme = useContext(ThemeContext)
+  return <button className={theme.primary}>Click</button>
+}
+```
+
+**Correct: null check or default value**
+
+```tsx
+const ThemeContext = createContext<Theme>({
+  primary: 'blue',
+  secondary: 'gray'
+})
+
+// Or with null check
+function useTheme() {
+  const theme = useContext(ThemeContext)
+  if (!theme) {
+    throw new Error('useTheme must be used within ThemeProvider')
+  }
+  return theme
+}
+```
+
+**Incorrect: mutating state in reducer**
+
+```tsx
+function reducer(state: State, action: Action) {
+  switch (action.type) {
+    case 'add':
+      // ❌ Mutating existing array
+      state.items.push(action.item)
+      return state
+  }
+}
+```
+
+**Correct: immutable reducer**
+
+```tsx
+function reducer(state: State, action: Action): State {
+  switch (action.type) {
+    case 'add':
+      // ✅ Return new state object
+      return {
+        ...state,
+        items: [...state.items, action.item]
+      }
+    default:
+      return state
+  }
+}
+```
+
+1. **Only call at top level** - Never inside loops, conditions, or nested functions
+
+2. **Only call in React functions** - Components or custom hooks
+
+3. **Include all dependencies** - ESLint plugin helps catch missing deps
+
+4. **Don't mutate** - State and refs should be updated immutably
+
+5. **Cleanup effects** - Return cleanup function for subscriptions/timers
+
+6. **Memoize wisely** - Only for expensive computations or stable references
+
+Reference: [https://react.dev/reference/rules/rules-of-hooks](https://react.dev/reference/rules/rules-of-hooks)
 
 ---
 
@@ -373,6 +704,197 @@ Both components share the same promise, so only one fetch occurs. Layout renders
 
 **Trade-off:** Faster initial paint vs potential layout shift. Choose based on your UX priorities.
 
+### 1.6 Use the React use() API for Data and Context
+
+**Impact: HIGH (cleaner async patterns, Suspense integration)**
+
+React 19's `use` API enables reading Promises and Context with Suspense integration. Unlike hooks, `use` can be called inside conditionals and loops, providing more flexible data access patterns.
+
+**Incorrect: manual promise handling**
+
+```tsx
+function Message({ messagePromise }: { messagePromise: Promise<string> }) {
+  const [message, setMessage] = useState<string | null>(null)
+  const [error, setError] = useState<Error | null>(null)
+  const [loading, setLoading] = useState(true)
+  
+  useEffect(() => {
+    messagePromise
+      .then(setMessage)
+      .catch(setError)
+      .finally(() => setLoading(false))
+  }, [messagePromise])
+  
+  if (loading) return <p>Loading...</p>
+  if (error) return <p>Error: {error.message}</p>
+  return <p>{message}</p>
+}
+```
+
+**Correct: use API with Suspense**
+
+```tsx
+import { use, Suspense } from 'react'
+
+function Message({ messagePromise }: { messagePromise: Promise<string> }) {
+  // ✅ use() suspends until promise resolves
+  const message = use(messagePromise)
+  return <p>{message}</p>
+}
+
+// Parent handles loading state
+function App() {
+  const messagePromise = fetchMessage()
+  return (
+    <Suspense fallback={<p>Loading...</p>}>
+      <Message messagePromise={messagePromise} />
+    </Suspense>
+  )
+}
+```
+
+**Incorrect: useContext can't be conditional**
+
+```tsx
+function HorizontalRule({ show }: { show: boolean }) {
+  // ❌ useContext must be called unconditionally
+  const theme = useContext(ThemeContext)
+  
+  if (!show) return null
+  return <hr className={theme} />
+}
+```
+
+**Correct: use can be conditional**
+
+```tsx
+import { use } from 'react'
+
+function HorizontalRule({ show }: { show: boolean }) {
+  if (!show) return null
+  
+  // ✅ use() can be called conditionally
+  const theme = use(ThemeContext)
+  return <hr className={theme} />
+}
+```
+
+**Server to Client streaming pattern:**
+
+```tsx
+// Server Component
+import { Suspense } from 'react'
+import { Message } from './message'
+
+export default function App() {
+  // ✅ Create promise in server component
+  const messagePromise = fetchMessage()
+  
+  return (
+    <Suspense fallback={<p>Waiting for message...</p>}>
+      <Message messagePromise={messagePromise} />
+    </Suspense>
+  )
+}
+
+// Client Component (message.tsx)
+'use client'
+import { use } from 'react'
+
+export function Message({ messagePromise }: { messagePromise: Promise<string> }) {
+  // ✅ Promise streams from server, resolved on client
+  const content = use(messagePromise)
+  return <p>Here is the message: {content}</p>
+}
+```
+
+**Error handling with Error Boundary:**
+
+```tsx
+import { use, Suspense } from 'react'
+import { ErrorBoundary } from 'react-error-boundary'
+
+function MessageContainer({ messagePromise }: { messagePromise: Promise<string> }) {
+  return (
+    <ErrorBoundary fallback={<p>⚠️ Something went wrong</p>}>
+      <Suspense fallback={<p>⌛ Loading...</p>}>
+        <Message messagePromise={messagePromise} />
+      </Suspense>
+    </ErrorBoundary>
+  )
+}
+
+function Message({ messagePromise }: { messagePromise: Promise<string> }) {
+  const content = use(messagePromise)
+  return <p>{content}</p>
+}
+```
+
+**Error handling with Promise.catch:**
+
+```tsx
+function App() {
+  const messagePromise = fetchMessage().catch(() => {
+    return 'No message found.'
+  })
+  
+  return (
+    <Suspense fallback={<p>Loading...</p>}>
+      <Message messagePromise={messagePromise} />
+    </Suspense>
+  )
+}
+```
+
+**Incorrect: creating promise in client component**
+
+```tsx
+'use client'
+
+function MessageContainer() {
+  // ❌ Promise created on every render
+  const messagePromise = fetchMessage()
+  
+  return (
+    <Suspense fallback={<p>Loading...</p>}>
+      <Message messagePromise={messagePromise} />
+    </Suspense>
+  )
+}
+```
+
+**Correct: stable promise reference**
+
+```tsx
+'use client'
+import { useMemo } from 'react'
+
+function MessageContainer({ userId }: { userId: string }) {
+  // ✅ Promise is stable across re-renders
+  const messagePromise = useMemo(() => fetchMessage(userId), [userId])
+  
+  return (
+    <Suspense fallback={<p>Loading...</p>}>
+      <Message messagePromise={messagePromise} />
+    </Suspense>
+  )
+}
+```
+
+**Key points:**
+
+1. **use() suspends** - Component suspends until Promise resolves
+
+2. **Conditional calls OK** - Unlike hooks, can be called in if/for blocks
+
+3. **Create promises on server** - Pass stable promises from server to client
+
+4. **Error Boundary for errors** - use() cannot be in try-catch blocks
+
+5. **Serializable values only** - Promise resolved values must be serializable
+
+Reference: [https://react.dev/reference/react/use](https://react.dev/reference/react/use)
+
 ---
 
 ## 2. Bundle Size Optimization
@@ -436,7 +958,84 @@ Libraries commonly affected: `lucide-react`, `@mui/material`, `@mui/icons-materi
 
 Reference: [https://vercel.com/blog/how-we-optimized-package-imports-in-next-js](https://vercel.com/blog/how-we-optimized-package-imports-in-next-js)
 
-### 2.2 Conditional Module Loading
+### 2.2 Avoid Namespace React Imports
+
+**Impact: MEDIUM (cleaner imports, better tree-shaking)**
+
+React 17+ with the new JSX transform no longer requires importing React to use JSX. Use named imports directly from 'react' instead of namespace imports for cleaner code and better tree-shaking.
+
+**Incorrect: namespace import - unnecessary**
+
+```tsx
+import * as React from 'react'
+
+function Button() {
+  const [count, setCount] = React.useState(0)
+  const ref = React.useRef<HTMLButtonElement>(null)
+  
+  React.useEffect(() => {
+    console.log('mounted')
+  }, [])
+  
+  return <button ref={ref}>{count}</button>
+}
+```
+
+**Incorrect: default import - legacy pattern**
+
+```tsx
+import React from 'react'
+
+function Button() {
+  const [count, setCount] = React.useState(0)
+  
+  return <button>{count}</button>
+}
+```
+
+**Correct: named imports only**
+
+```tsx
+import { useState, useRef, useEffect } from 'react'
+
+function Button() {
+  const [count, setCount] = useState(0)
+  const ref = useRef<HTMLButtonElement>(null)
+  
+  useEffect(() => {
+    console.log('mounted')
+  }, [])
+  
+  return <button ref={ref}>{count}</button>
+}
+```
+
+**Why avoid namespace imports:**
+
+1. **Verbose code** - `React.useState` is longer than `useState`
+
+2. **Worse tree-shaking** - Bundlers can better optimize named imports
+
+3. **Unnecessary since React 17** - New JSX transform doesn't require React in scope
+
+4. **IDE autocomplete** - Named imports provide better IntelliSense
+
+**Exception - when you need React namespace:**
+
+```tsx
+// Only use namespace when you need the React type itself
+import { useRef, type ReactNode, type ComponentProps } from 'react'
+
+// ✅ Type imports are fine as named imports
+type Props = {
+  children: ReactNode
+  onClick: ComponentProps<'button'>['onClick']
+}
+```
+
+Reference: [https://legacy.reactjs.org/blog/2020/09/22/introducing-the-new-jsx-transform.html](https://legacy.reactjs.org/blog/2020/09/22/introducing-the-new-jsx-transform.html)
+
+### 2.3 Conditional Module Loading
 
 **Impact: HIGH (loads large data only when needed)**
 
@@ -463,7 +1062,7 @@ function AnimationPlayer({ enabled, setEnabled }: { enabled: boolean; setEnabled
 
 The `typeof window !== 'undefined'` check prevents bundling this module for SSR, optimizing server bundle size and build speed.
 
-### 2.3 Defer Non-Critical Third-Party Libraries
+### 2.4 Defer Non-Critical Third-Party Libraries
 
 **Impact: MEDIUM (loads after hydration)**
 
@@ -529,7 +1128,7 @@ export default function App({ children }) {
 }
 ```
 
-### 2.4 Dynamic Imports for Heavy Components
+### 2.5 Dynamic Imports for Heavy Components
 
 **Impact: CRITICAL (directly affects TTI and LCP)**
 
@@ -578,7 +1177,7 @@ function CodePanel({ code }: { code: string }) {
 }
 ```
 
-### 2.5 Preload Based on User Intent
+### 2.6 Preload Based on User Intent
 
 **Impact: MEDIUM (reduces perceived latency)**
 
@@ -623,6 +1222,99 @@ function FlagsProvider({ children, flags }: Props) {
 ```
 
 The `typeof window !== 'undefined'` check prevents bundling preloaded modules for SSR, optimizing server bundle size and build speed.
+
+### 2.7 Use Explicit Type Imports
+
+**Impact: MEDIUM (prevents runtime imports of types, smaller bundles)**
+
+Always use `import type` or inline `type` modifier when importing types. This ensures TypeScript types are completely erased at compile time and prevents accidental runtime imports.
+
+**Incorrect: ambiguous imports**
+
+```tsx
+import { User, UserRole, fetchUser } from './user'
+// TypeScript can't guarantee User and UserRole won't be in runtime bundle
+// If User is a class (not just a type), it will be included unnecessarily
+
+import { ComponentProps, useState, ReactNode } from 'react'
+// ComponentProps and ReactNode are types but imported alongside runtime values
+```
+
+**Incorrect: mixed without type modifier**
+
+```tsx
+import { User } from './types'
+import { fetchUser } from './api'
+
+function Profile({ user }: { user: User }) {
+  // ...
+}
+```
+
+**Correct: separate type imports**
+
+```tsx
+import type { User, UserRole } from './user'
+import { fetchUser } from './user'
+
+function Profile({ user }: { user: User }) {
+  // User is guaranteed to be erased at compile time
+}
+```
+
+**Correct: inline type modifier - preferred**
+
+```tsx
+import { type User, type UserRole, fetchUser } from './user'
+
+// Or for React imports
+import { type ComponentProps, type ReactNode, useState, useEffect } from 'react'
+
+function Button({ children }: { children: ReactNode }) {
+  const [active, setActive] = useState(false)
+  return <button>{children}</button>
+}
+```
+
+**Correct: type-only re-exports**
+
+```tsx
+// types.ts
+export type { User, UserRole } from './user'
+export type { Product, ProductCategory } from './product'
+
+// index.ts - re-exporting types
+export type { User, UserRole } from './types'
+export { fetchUser, updateUser } from './api'
+```
+
+**ESLint configuration:**
+
+```json
+{
+  "rules": {
+    "@typescript-eslint/consistent-type-imports": [
+      "error",
+      {
+        "prefer": "type-imports",
+        "fixStyle": "inline-type-imports"
+      }
+    ]
+  }
+}
+```
+
+**Why explicit type imports matter:**
+
+1. **Smaller bundles** - Types are guaranteed to be erased
+
+2. **Faster builds** - Bundler can skip type-only modules entirely
+
+3. **Clearer intent** - Distinguishes runtime values from compile-time types
+
+4. **Avoids circular dependency issues** - Type-only imports don't cause runtime cycles
+
+Reference: [https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export)
 
 ---
 
@@ -1651,7 +2343,176 @@ useEffect(() => {
 }, [isMobile])
 ```
 
-### 5.7 Put Interaction Logic in Event Handlers
+### 5.7 Provide Default Values for Optional Props
+
+**Impact: MEDIUM (prevents undefined errors, stable references)**
+
+Always provide default values for optional props using destructuring defaults. This prevents undefined checks throughout components and ensures stable references for dependency arrays.
+
+**Incorrect: no defaults - requires defensive checks**
+
+```tsx
+interface ButtonProps {
+  onClick?: () => void
+  disabled?: boolean
+  variant?: 'primary' | 'secondary'
+  className?: string
+}
+
+function Button({ onClick, disabled, variant, className }: ButtonProps) {
+  // ❌ Need to check for undefined everywhere
+  const handleClick = () => {
+    if (onClick) {
+      onClick()
+    }
+  }
+  
+  // ❌ Conditional class logic is messy
+  const classes = `btn ${variant ? `btn-${variant}` : 'btn-primary'} ${className || ''}`
+  
+  return (
+    <button 
+      onClick={handleClick} 
+      disabled={disabled ?? false}
+      className={classes}
+    >
+      Click me
+    </button>
+  )
+}
+```
+
+**Incorrect: defaults in function body - unstable references**
+
+```tsx
+function UserList({ users, onSelect, renderItem }: UserListProps) {
+  // ❌ Creates new function on every render
+  const handleSelect = onSelect || (() => {})
+  
+  // ❌ Creates new function on every render - breaks memoization
+  const defaultRender = renderItem || ((user) => <span>{user.name}</span>)
+  
+  useEffect(() => {
+    // This effect runs on every render because handleSelect changes
+  }, [handleSelect])
+}
+```
+
+**Correct: defaults in destructuring**
+
+```tsx
+interface ButtonProps {
+  onClick?: () => void
+  disabled?: boolean
+  variant?: 'primary' | 'secondary'
+  className?: string
+}
+
+// ✅ Noop function defined outside component for stable reference
+const noop = () => {}
+
+function Button({ 
+  onClick = noop,
+  disabled = false, 
+  variant = 'primary',
+  className = ''
+}: ButtonProps) {
+  // ✅ No undefined checks needed
+  const classes = `btn btn-${variant} ${className}`.trim()
+  
+  return (
+    <button onClick={onClick} disabled={disabled} className={classes}>
+      Click me
+    </button>
+  )
+}
+```
+
+**Correct: with stable default functions**
+
+```tsx
+interface UserListProps {
+  users: User[]
+  onSelect?: (user: User) => void
+  renderItem?: (user: User) => ReactNode
+  filterFn?: (user: User) => boolean
+}
+
+// ✅ Define defaults outside component for stable references
+const defaultOnSelect = () => {}
+const defaultRenderItem = (user: User) => <span>{user.name}</span>
+const defaultFilter = () => true
+
+function UserList({ 
+  users,
+  onSelect = defaultOnSelect,
+  renderItem = defaultRenderItem,
+  filterFn = defaultFilter
+}: UserListProps) {
+  const filteredUsers = useMemo(
+    () => users.filter(filterFn),
+    [users, filterFn] // ✅ filterFn is stable
+  )
+  
+  useEffect(() => {
+    // ✅ Won't re-run unnecessarily
+  }, [onSelect])
+  
+  return (
+    <ul>
+      {filteredUsers.map(user => (
+        <li key={user.id} onClick={() => onSelect(user)}>
+          {renderItem(user)}
+        </li>
+      ))}
+    </ul>
+  )
+}
+```
+
+**Correct: with complex default objects**
+
+```tsx
+interface TableProps {
+  data: Row[]
+  columns: Column[]
+  pagination?: {
+    pageSize: number
+    currentPage: number
+  }
+  sorting?: {
+    field: string
+    direction: 'asc' | 'desc'
+  }
+}
+
+// ✅ Default objects defined outside for stability
+const defaultPagination = { pageSize: 10, currentPage: 1 }
+const defaultSorting = { field: 'id', direction: 'asc' as const }
+
+function Table({
+  data,
+  columns,
+  pagination = defaultPagination,
+  sorting = defaultSorting
+}: TableProps) {
+  // pagination and sorting are always defined with stable references
+}
+```
+
+**Key principles:**
+
+1. **Define defaults outside** - Functions and objects as defaults should be defined outside the component
+
+2. **Use `noop` for callbacks** - A shared empty function prevents unnecessary re-renders
+
+3. **Provide sensible defaults** - Choose defaults that make the component work without configuration
+
+4. **Stable references** - Default values in dependency arrays should be referentially stable
+
+Reference: [https://react.dev/learn/passing-props-to-a-component#specifying-a-default-value-for-a-prop](https://react.dev/learn/passing-props-to-a-component#specifying-a-default-value-for-a-prop)
+
+### 5.8 Put Interaction Logic in Event Handlers
 
 **Impact: MEDIUM (avoids effect re-runs and duplicate side effects)**
 
@@ -1692,7 +2553,225 @@ function Form() {
 
 Reference: [https://react.dev/learn/removing-effect-dependencies#should-this-code-move-to-an-event-handler](https://react.dev/learn/removing-effect-dependencies#should-this-code-move-to-an-event-handler)
 
-### 5.8 Subscribe to Derived State
+### 5.9 startTransition Correct Usage Patterns
+
+**Impact: HIGH (maintains UI responsiveness, prevents blocking)**
+
+`startTransition` marks state updates as non-urgent, allowing React to keep the UI responsive during heavy updates. Understanding when and how to use it is crucial for optimal performance.
+
+**Incorrect: using startTransition for urgent updates**
+
+```tsx
+import { startTransition } from 'react'
+
+function SearchInput() {
+  const [query, setQuery] = useState('')
+  
+  return (
+    <input
+      value={query}
+      onChange={(e) => {
+        // ❌ Input value should update immediately
+        startTransition(() => {
+          setQuery(e.target.value)
+        })
+      }}
+    />
+  )
+}
+```
+
+**Correct: separate urgent and non-urgent updates**
+
+```tsx
+import { useState, startTransition } from 'react'
+
+function SearchInput() {
+  const [query, setQuery] = useState('')        // Urgent: input display
+  const [results, setResults] = useState([])    // Non-urgent: search results
+  
+  return (
+    <>
+      <input
+        value={query}
+        onChange={(e) => {
+          // ✅ Input updates immediately
+          setQuery(e.target.value)
+          
+          // ✅ Heavy search operation is non-urgent
+          startTransition(() => {
+            setResults(searchItems(e.target.value))
+          })
+        }}
+      />
+      <SearchResults results={results} />
+    </>
+  )
+}
+```
+
+**Incorrect: async function inside startTransition**
+
+```tsx
+import { startTransition } from 'react'
+
+function DataLoader() {
+  const [data, setData] = useState(null)
+  
+  const loadData = async () => {
+    startTransition(async () => {
+      // ❌ Async functions don't work - state update happens after transition ends
+      const result = await fetchData()
+      setData(result)
+    })
+  }
+}
+```
+
+**Correct: state update before await**
+
+```tsx
+import { startTransition } from 'react'
+
+function DataLoader() {
+  const [data, setData] = useState(null)
+  const [isPending, setIsPending] = useState(false)
+  
+  const loadData = async () => {
+    setIsPending(true)
+    const result = await fetchData()
+    
+    // ✅ startTransition wraps the synchronous state update
+    startTransition(() => {
+      setData(result)
+      setIsPending(false)
+    })
+  }
+}
+```
+
+**Correct: useTransition for pending state**
+
+```tsx
+import { useState, useTransition } from 'react'
+
+function TabContainer() {
+  const [tab, setTab] = useState('home')
+  const [isPending, startTransition] = useTransition()
+  
+  return (
+    <div>
+      <TabBar
+        currentTab={tab}
+        onTabChange={(newTab) => {
+          // ✅ useTransition provides isPending state
+          startTransition(() => {
+            setTab(newTab)
+          })
+        }}
+      />
+      {isPending && <Spinner />}
+      <TabContent tab={tab} />
+    </div>
+  )
+}
+```
+
+**Incorrect: wrapping non-state-update code**
+
+```tsx
+function Form() {
+  const handleSubmit = () => {
+    startTransition(() => {
+      // ❌ No state update inside - transition does nothing
+      console.log('Submitting...')
+      fetch('/api/submit', { method: 'POST' })
+    })
+  }
+}
+```
+
+**Correct: only wrap state updates**
+
+```tsx
+function Form() {
+  const [status, setStatus] = useState('idle')
+  
+  const handleSubmit = async () => {
+    console.log('Submitting...')
+    await fetch('/api/submit', { method: 'POST' })
+    
+    // ✅ Only the state update is wrapped
+    startTransition(() => {
+      setStatus('submitted')
+    })
+  }
+}
+```
+
+**Incorrect: startTransition for initial render**
+
+```tsx
+function App() {
+  const [items, setItems] = useState([])
+  
+  useEffect(() => {
+    // ❌ startTransition doesn't help during initial render
+    startTransition(() => {
+      setItems(generateLargeList())
+    })
+  }, [])
+}
+```
+
+**Correct: use Suspense for initial data**
+
+```tsx
+import { useState, useDeferredValue, memo } from 'react'
+
+function SearchPage() {
+  const [query, setQuery] = useState('')
+  // ✅ deferredQuery lags behind during rapid updates
+  const deferredQuery = useDeferredValue(query)
+  const isStale = query !== deferredQuery
+  
+  return (
+    <div>
+      <input
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+      />
+      <div style={{ opacity: isStale ? 0.5 : 1 }}>
+        <SearchResults query={deferredQuery} />
+      </div>
+    </div>
+  )
+}
+
+// ✅ Memoize to skip re-renders when deferredQuery hasn't changed
+const SearchResults = memo(function SearchResults({ query }: { query: string }) {
+  const results = searchDatabase(query) // Expensive operation
+  return <ResultsList results={results} />
+})
+```
+
+**Advanced: combining with useDeferredValue:**
+
+**Key principles:**
+
+1. **Urgent vs non-urgent** - User input is urgent, derived computations are not
+
+2. **Synchronous only** - startTransition callback must be synchronous
+
+3. **State updates only** - Only wrap setState calls, not side effects
+
+4. **Use with Suspense** - Transitions work best with Suspense boundaries
+
+5. **isPending for feedback** - Use useTransition when you need loading indicators
+
+Reference: [https://react.dev/reference/react/startTransition](https://react.dev/reference/react/startTransition)
+
+### 5.10 Subscribe to Derived State
 
 **Impact: MEDIUM (reduces re-render frequency)**
 
@@ -1760,7 +2839,7 @@ function Sidebar() {
 
 If re-render frequency is not critical, use `useWindowDimensions()` directly:
 
-### 5.9 Use Functional setState Updates
+### 5.11 Use Functional setState Updates
 
 **Impact: MEDIUM (prevents stale closures and unnecessary callback recreations)**
 
@@ -1838,7 +2917,7 @@ function TodoList() {
 
 **Note:** If your project has [React Compiler](https://react.dev/learn/react-compiler) enabled, the compiler can automatically optimize some cases, but functional updates are still recommended for correctness and to prevent stale closure bugs.
 
-### 5.10 Use Lazy State Initialization
+### 5.12 Use Lazy State Initialization
 
 **Impact: MEDIUM (wasted computation on every render)**
 
@@ -1892,7 +2971,7 @@ Use lazy initialization when computing initial values from localStorage/sessionS
 
 For simple primitives (`useState(0)`), direct references (`useState(props.value)`), or cheap literals (`useState({})`), the function form is unnecessary.
 
-### 5.11 Use Transitions for Non-Urgent Updates
+### 5.13 Use Transitions for Non-Urgent Updates
 
 **Impact: MEDIUM (maintains UI responsiveness)**
 
@@ -1977,7 +3056,7 @@ function ScrollTracker() {
 }
 ```
 
-### 5.12 Use useRef for Transient Values
+### 5.14 Use useRef for Transient Values
 
 **Impact: MEDIUM (avoids unnecessary re-renders on frequent updates)**
 
@@ -2275,7 +3354,276 @@ The inline script executes synchronously before showing the element, ensuring th
 
 This pattern is especially useful for theme toggles, user preferences, authentication states, and any client-only data that should render immediately without flashing default values.
 
-### 6.6 Suppress Expected Hydration Mismatches
+### 6.6 React DOM APIs Correct Usage Patterns
+
+**Impact: HIGH (proper hydration, portal usage, performance)**
+
+React DOM provides browser-specific APIs for rendering React components. Using them correctly ensures proper hydration, performance, and expected behavior.
+
+**Incorrect: calling createRoot multiple times**
+
+```tsx
+// ❌ Creates new root on every call
+function renderApp() {
+  const root = createRoot(document.getElementById('root')!)
+  root.render(<App />)
+}
+
+button.addEventListener('click', renderApp)
+```
+
+**Correct: create root once, render multiple times**
+
+```tsx
+import { createRoot } from 'react-dom/client'
+
+// ✅ Create root once
+const root = createRoot(document.getElementById('root')!)
+
+function renderApp(state: AppState) {
+  root.render(<App state={state} />)
+}
+
+// Re-render with new props
+button.addEventListener('click', () => renderApp(newState))
+```
+
+**Incorrect: using createRoot for SSR**
+
+```tsx
+// ❌ createRoot doesn't preserve server HTML
+const root = createRoot(document.getElementById('root')!)
+root.render(<App />)
+// Server-rendered HTML is discarded, causes flicker
+```
+
+**Correct: hydrateRoot for SSR**
+
+```tsx
+import { hydrateRoot } from 'react-dom/client'
+
+// ✅ Preserves server HTML, attaches event handlers
+hydrateRoot(document.getElementById('root')!, <App />)
+```
+
+**Incorrect: portal without proper event handling**
+
+```tsx
+function Modal({ children, onClose }: ModalProps) {
+  // ❌ Click outside doesn't close modal
+  return createPortal(
+    <div className="modal">
+      {children}
+    </div>,
+    document.body
+  )
+}
+```
+
+**Correct: portal with backdrop and event handling**
+
+```tsx
+import { createPortal } from 'react-dom'
+
+function Modal({ children, onClose }: ModalProps) {
+  return createPortal(
+    // ✅ Backdrop captures outside clicks
+    <div className="modal-backdrop" onClick={onClose}>
+      <div 
+        className="modal-content" 
+        onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+      >
+        {children}
+      </div>
+    </div>,
+    document.body
+  )
+}
+```
+
+**Incorrect: portal target doesn't exist**
+
+```tsx
+function Tooltip({ children }: TooltipProps) {
+  // ❌ Element might not exist yet
+  return createPortal(
+    <div className="tooltip">{children}</div>,
+    document.getElementById('tooltip-root')!
+  )
+}
+```
+
+**Correct: ensure portal target exists**
+
+```tsx
+import { createPortal } from 'react-dom'
+import { useState, useEffect } from 'react'
+
+function Tooltip({ children }: TooltipProps) {
+  const [container, setContainer] = useState<HTMLElement | null>(null)
+  
+  useEffect(() => {
+    // ✅ Create container if it doesn't exist
+    let el = document.getElementById('tooltip-root')
+    if (!el) {
+      el = document.createElement('div')
+      el.id = 'tooltip-root'
+      document.body.appendChild(el)
+    }
+    setContainer(el)
+  }, [])
+  
+  if (!container) return null
+  
+  return createPortal(
+    <div className="tooltip">{children}</div>,
+    container
+  )
+}
+```
+
+**Incorrect: overusing flushSync**
+
+```tsx
+import { flushSync } from 'react-dom'
+
+function Form() {
+  const [value, setValue] = useState('')
+  
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    // ❌ Unnecessary - normal updates work fine here
+    flushSync(() => {
+      setValue(e.target.value)
+    })
+  }
+}
+```
+
+**Correct: flushSync for DOM measurements**
+
+```tsx
+import { flushSync } from 'react-dom'
+import { useState, useRef } from 'react'
+
+function ExpandableList() {
+  const [items, setItems] = useState<string[]>([])
+  const listRef = useRef<HTMLUListElement>(null)
+  
+  const addItem = (item: string) => {
+    // ✅ Need DOM updated before scrolling
+    flushSync(() => {
+      setItems(prev => [...prev, item])
+    })
+    
+    // Now DOM is updated, can safely scroll
+    listRef.current?.lastElementChild?.scrollIntoView()
+  }
+  
+  return <ul ref={listRef}>{items.map(item => <li key={item}>{item}</li>)}</ul>
+}
+```
+
+**Correct: flushSync for third-party integration**
+
+```tsx
+import { flushSync } from 'react-dom'
+
+function Editor() {
+  const [content, setContent] = useState('')
+  const editorRef = useRef<ExternalEditor>(null)
+  
+  const syncWithExternalEditor = () => {
+    // ✅ External library needs DOM to be updated immediately
+    flushSync(() => {
+      setContent(editorRef.current?.getValue() ?? '')
+    })
+    
+    // Now React DOM matches external editor state
+    externalLibrary.notifyUpdate()
+  }
+}
+```
+
+**Correct: resource hints for performance**
+
+```tsx
+import { preload, prefetchDNS, preconnect } from 'react-dom'
+
+function App() {
+  // ✅ Preconnect to API origin early
+  preconnect('https://api.example.com')
+  
+  // ✅ Prefetch DNS for third-party resources
+  prefetchDNS('https://analytics.example.com')
+  
+  // ✅ Preload critical resources
+  preload('/fonts/inter.woff2', { as: 'font', type: 'font/woff2' })
+  preload('/hero-image.webp', { as: 'image' })
+  
+  return <MainContent />
+}
+```
+
+**Incorrect: client-only values during SSR**
+
+```tsx
+function Greeting() {
+  // ❌ Different value on server vs client
+  const time = new Date().toLocaleTimeString()
+  return <p>Current time: {time}</p>
+}
+```
+
+**Correct: useEffect for client-only values**
+
+```tsx
+import { useState, useEffect } from 'react'
+
+function Greeting() {
+  const [time, setTime] = useState<string | null>(null)
+  
+  useEffect(() => {
+    // ✅ Only runs on client after hydration
+    setTime(new Date().toLocaleTimeString())
+    const interval = setInterval(() => {
+      setTime(new Date().toLocaleTimeString())
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [])
+  
+  // ✅ Server and initial client render match
+  return <p>Current time: {time ?? 'Loading...'}</p>
+}
+```
+
+**Correct: suppressHydrationWarning for intentional mismatches**
+
+```tsx
+function Timestamp() {
+  return (
+    // ✅ Explicitly suppress warning for known mismatch
+    <time suppressHydrationWarning>
+      {new Date().toISOString()}
+    </time>
+  )
+}
+```
+
+**Key principles:**
+
+1. **createRoot once** - Create root at app initialization, not per-render
+
+2. **hydrateRoot for SSR** - Always use hydrateRoot when server-rendering
+
+3. **flushSync sparingly** - Only for DOM measurements or third-party sync
+
+4. **Portal cleanup** - Ensure portal targets exist before rendering
+
+5. **Hydration match** - Server and client initial render must produce same HTML
+
+Reference: [https://react.dev/reference/react-dom](https://react.dev/reference/react-dom)
+
+### 6.7 Suppress Expected Hydration Mismatches
 
 **Impact: LOW-MEDIUM (avoids noisy hydration warnings for known differences)**
 
@@ -2301,7 +3649,7 @@ function Timestamp() {
 }
 ```
 
-### 6.7 Use Activity Component for Show/Hide
+### 6.8 Use Activity Component for Show/Hide
 
 **Impact: MEDIUM (preserves state/DOM)**
 
@@ -2323,7 +3671,7 @@ function Dropdown({ isOpen }: Props) {
 
 Avoids expensive re-renders and state loss.
 
-### 6.8 Use Explicit Conditional Rendering
+### 6.9 Use Explicit Conditional Rendering
 
 **Impact: LOW (prevents rendering 0 or NaN)**
 
@@ -2359,7 +3707,7 @@ function Badge({ count }: { count: number }) {
 // When count = 5, renders: <div><span class="badge">5</span></div>
 ```
 
-### 6.9 Use useTransition Over Manual Loading States
+### 6.10 Use useTransition Over Manual Loading States
 
 **Impact: LOW (reduces re-renders and improves code clarity)**
 
@@ -2893,7 +4241,217 @@ regex.test('foo')  // false, lastIndex = 0
 
 Global regex (`/g`) has mutable `lastIndex` state:
 
-### 7.10 Use Loop for Min/Max Instead of Sort
+### 7.10 Prefer dayjs Over Native Date
+
+**Impact: MEDIUM (consistent date handling, timezone safety, smaller bundle)**
+
+Use `dayjs` instead of native `Date` for date manipulation. dayjs provides immutable operations, consistent parsing, timezone support, and a cleaner API while being only ~2KB gzipped.
+
+**Incorrect: native Date - mutable and inconsistent**
+
+```tsx
+function formatDate(date: Date) {
+  // ❌ Native Date formatting is verbose and locale-dependent
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function addDays(date: Date, days: number) {
+  // ❌ Mutates the original date object
+  date.setDate(date.getDate() + days)
+  return date
+}
+
+// Usage
+const today = new Date()
+const nextWeek = addDays(today, 7)
+console.log(today) // ❌ today is also modified!
+```
+
+**Correct: dayjs - immutable and consistent**
+
+```tsx
+import dayjs from 'dayjs'
+
+function formatDate(date: dayjs.Dayjs | Date | string) {
+  // ✅ Clean, chainable API
+  return dayjs(date).format('YYYY-MM-DD')
+}
+
+function addDays(date: dayjs.Dayjs | Date | string, days: number) {
+  // ✅ Returns new instance, original unchanged
+  return dayjs(date).add(days, 'day')
+}
+
+// Usage
+const today = dayjs()
+const nextWeek = addDays(today, 7)
+console.log(today.format()) // ✅ today is unchanged
+```
+
+**Incorrect: timezone issues with native Date**
+
+```tsx
+function parseServerDate(isoString: string) {
+  // ❌ Parsed in local timezone, causes bugs
+  const date = new Date(isoString)
+  return date.toLocaleDateString()
+}
+
+function getStartOfDay(date: Date) {
+  // ❌ Timezone-naive, may give wrong date
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate())
+}
+```
+
+**Correct: timezone-aware with dayjs**
+
+```tsx
+import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
+import timezone from 'dayjs/plugin/timezone'
+
+dayjs.extend(utc)
+dayjs.extend(timezone)
+
+function parseServerDate(isoString: string) {
+  // ✅ Explicit timezone handling
+  return dayjs.utc(isoString).local().format('YYYY-MM-DD')
+}
+
+function getStartOfDay(date: dayjs.Dayjs, tz: string = 'Asia/Seoul') {
+  // ✅ Timezone-aware start of day
+  return dayjs(date).tz(tz).startOf('day')
+}
+```
+
+**Incorrect: complex date calculations**
+
+```tsx
+function getRelativeTime(date: Date) {
+  const now = new Date()
+  const diff = now.getTime() - date.getTime()
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+  
+  // ❌ Manual, error-prone relative time calculation
+  if (days === 0) return '오늘'
+  if (days === 1) return '어제'
+  if (days < 7) return `${days}일 전`
+  // ... more complex logic
+}
+
+function getMonthRange(year: number, month: number) {
+  // ❌ Verbose and easy to get wrong
+  const start = new Date(year, month, 1)
+  const end = new Date(year, month + 1, 0)
+  return { start, end }
+}
+```
+
+**Correct: dayjs plugins for complex operations**
+
+```tsx
+import dayjs from 'dayjs'
+import relativeTime from 'dayjs/plugin/relativeTime'
+import 'dayjs/locale/ko'
+
+dayjs.extend(relativeTime)
+dayjs.locale('ko')
+
+function getRelativeTime(date: dayjs.Dayjs | Date | string) {
+  // ✅ Built-in relative time with localization
+  return dayjs(date).fromNow() // "3일 전", "2시간 전"
+}
+
+function getMonthRange(year: number, month: number) {
+  const target = dayjs().year(year).month(month)
+  // ✅ Clean API for date ranges
+  return {
+    start: target.startOf('month'),
+    end: target.endOf('month')
+  }
+}
+```
+
+**Incorrect: date comparison with native Date**
+
+```tsx
+function isExpired(expiryDate: Date) {
+  // ❌ Comparing Date objects directly is unreliable
+  return new Date() > expiryDate
+}
+
+function isSameDay(date1: Date, date2: Date) {
+  // ❌ Verbose comparison
+  return date1.getFullYear() === date2.getFullYear() &&
+         date1.getMonth() === date2.getMonth() &&
+         date1.getDate() === date2.getDate()
+}
+```
+
+**Correct: dayjs comparison methods**
+
+```tsx
+import dayjs from 'dayjs'
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore'
+
+dayjs.extend(isSameOrBefore)
+
+function isExpired(expiryDate: dayjs.Dayjs | Date | string) {
+  // ✅ Clear, readable comparison
+  return dayjs().isAfter(expiryDate)
+}
+
+function isSameDay(date1: dayjs.Dayjs, date2: dayjs.Dayjs) {
+  // ✅ Built-in comparison with granularity
+  return date1.isSame(date2, 'day')
+}
+
+function isWithinRange(date: dayjs.Dayjs, start: dayjs.Dayjs, end: dayjs.Dayjs) {
+  // ✅ Range checking
+  return date.isSameOrAfter(start, 'day') && date.isSameOrBefore(end, 'day')
+}
+```
+
+**Recommended dayjs setup:**
+
+```tsx
+// Usage in components
+import dayjs from '@/lib/dayjs'
+
+function EventCard({ event }: { event: Event }) {
+  const eventDate = dayjs(event.date)
+  
+  return (
+    <div>
+      <time dateTime={eventDate.toISOString()}>
+        {eventDate.format('YYYY년 M월 D일 (ddd)')}
+      </time>
+      <span>{eventDate.fromNow()}</span>
+    </div>
+  )
+}
+```
+
+**Why dayjs over native Date:**
+
+1. **Immutable** - Operations return new instances, preventing mutation bugs
+
+2. **Chainable API** - Clean, readable date manipulation
+
+3. **Timezone support** - Proper timezone handling with plugins
+
+4. **Localization** - Built-in i18n for 100+ locales
+
+5. **Small size** - ~2KB gzipped (vs moment.js ~70KB)
+
+6. **Consistent parsing** - Reliable across browsers and environments
+
+Reference: [https://day.js.org/](https://day.js.org/)
+
+### 7.11 Use Loop for Min/Max Instead of Sort
 
 **Impact: LOW (O(n) instead of O(n log n))**
 
@@ -2971,7 +4529,7 @@ const max = Math.max(...numbers)
 
 This works for small arrays, but can be slower or just throw an error for very large arrays due to spread operator limitations. Maximal array length is approximately 124000 in Chrome 143 and 638000 in Safari 18; exact numbers may vary - see [the fiddle](https://jsfiddle.net/qw1jabsx/4/). Use the loop approach for reliability.
 
-### 7.11 Use Set/Map for O(1) Lookups
+### 7.12 Use Set/Map for O(1) Lookups
 
 **Impact: LOW-MEDIUM (O(n) to O(1))**
 
@@ -2991,7 +4549,7 @@ const allowedIds = new Set(['a', 'b', 'c', ...])
 items.filter(item => allowedIds.has(item.id))
 ```
 
-### 7.12 Use toSorted() Instead of sort() for Immutability
+### 7.13 Use toSorted() Instead of sort() for Immutability
 
 **Impact: MEDIUM-HIGH (prevents mutation bugs in React state)**
 

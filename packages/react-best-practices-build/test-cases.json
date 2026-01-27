@@ -129,6 +129,78 @@
   },
   {
     "ruleId": "",
+    "ruleTitle": "Use the React use() API for Data and Context",
+    "type": "bad",
+    "code": "function Message({ messagePromise }: { messagePromise: Promise<string> }) {\n  const [message, setMessage] = useState<string | null>(null)\n  const [error, setError] = useState<Error | null>(null)\n  const [loading, setLoading] = useState(true)\n  \n  useEffect(() => {\n    messagePromise\n      .then(setMessage)\n      .catch(setError)\n      .finally(() => setLoading(false))\n  }, [messagePromise])\n  \n  if (loading) return <p>Loading...</p>\n  if (error) return <p>Error: {error.message}</p>\n  return <p>{message}</p>\n}",
+    "language": "tsx",
+    "description": "manual promise handling"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Use the React use() API for Data and Context",
+    "type": "good",
+    "code": "import { use, Suspense } from 'react'\n\nfunction Message({ messagePromise }: { messagePromise: Promise<string> }) {\n  // ✅ use() suspends until promise resolves\n  const message = use(messagePromise)\n  return <p>{message}</p>\n}\n\n// Parent handles loading state\nfunction App() {\n  const messagePromise = fetchMessage()\n  return (\n    <Suspense fallback={<p>Loading...</p>}>\n      <Message messagePromise={messagePromise} />\n    </Suspense>\n  )\n}",
+    "language": "tsx",
+    "description": "use API with Suspense"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Use the React use() API for Data and Context",
+    "type": "bad",
+    "code": "function HorizontalRule({ show }: { show: boolean }) {\n  // ❌ useContext must be called unconditionally\n  const theme = useContext(ThemeContext)\n  \n  if (!show) return null\n  return <hr className={theme} />\n}",
+    "language": "tsx",
+    "description": "useContext can't be conditional"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Use the React use() API for Data and Context",
+    "type": "good",
+    "code": "import { use } from 'react'\n\nfunction HorizontalRule({ show }: { show: boolean }) {\n  if (!show) return null\n  \n  // ✅ use() can be called conditionally\n  const theme = use(ThemeContext)\n  return <hr className={theme} />\n}",
+    "language": "tsx",
+    "description": "use can be conditional"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Use the React use() API for Data and Context",
+    "type": "bad",
+    "code": "'use client'\n\nfunction MessageContainer() {\n  // ❌ Promise created on every render\n  const messagePromise = fetchMessage()\n  \n  return (\n    <Suspense fallback={<p>Loading...</p>}>\n      <Message messagePromise={messagePromise} />\n    </Suspense>\n  )\n}",
+    "language": "tsx",
+    "description": "creating promise in client component"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Use the React use() API for Data and Context",
+    "type": "good",
+    "code": "'use client'\nimport { useMemo } from 'react'\n\nfunction MessageContainer({ userId }: { userId: string }) {\n  // ✅ Promise is stable across re-renders\n  const messagePromise = useMemo(() => fetchMessage(userId), [userId])\n  \n  return (\n    <Suspense fallback={<p>Loading...</p>}>\n      <Message messagePromise={messagePromise} />\n    </Suspense>\n  )\n}",
+    "language": "tsx",
+    "description": "stable promise reference"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Avoid Namespace React Imports",
+    "type": "bad",
+    "code": "import * as React from 'react'\n\nfunction Button() {\n  const [count, setCount] = React.useState(0)\n  const ref = React.useRef<HTMLButtonElement>(null)\n  \n  React.useEffect(() => {\n    console.log('mounted')\n  }, [])\n  \n  return <button ref={ref}>{count}</button>\n}",
+    "language": "tsx",
+    "description": "namespace import - unnecessary"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Avoid Namespace React Imports",
+    "type": "bad",
+    "code": "import React from 'react'\n\nfunction Button() {\n  const [count, setCount] = React.useState(0)\n  \n  return <button>{count}</button>\n}",
+    "language": "tsx",
+    "description": "default import - legacy pattern"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Avoid Namespace React Imports",
+    "type": "good",
+    "code": "import { useState, useRef, useEffect } from 'react'\n\nfunction Button() {\n  const [count, setCount] = useState(0)\n  const ref = useRef<HTMLButtonElement>(null)\n  \n  useEffect(() => {\n    console.log('mounted')\n  }, [])\n  \n  return <button ref={ref}>{count}</button>\n}",
+    "language": "tsx",
+    "description": "named imports only"
+  },
+  {
+    "ruleId": "",
     "ruleTitle": "Avoid Barrel File Imports",
     "type": "bad",
     "code": "import { Check, X, Menu } from 'lucide-react'\n// Loads 1,583 modules, takes ~2.8s extra in dev\n// Runtime cost: 200-800ms on every cold start\n\nimport { Button, TextField } from '@mui/material'\n// Loads 2,225 modules, takes ~4.2s extra in dev",
@@ -190,6 +262,46 @@
     "code": "import { lazy, Suspense } from 'react'\n\nconst MonacoEditor = lazy(\n  () => import('./monaco-editor').then(m => ({ default: m.MonacoEditor }))\n)\n\nfunction CodePanel({ code }: { code: string }) {\n  return (\n    <Suspense fallback={<div>Loading editor...</div>}>\n      <MonacoEditor value={code} />\n    </Suspense>\n  )\n}",
     "language": "tsx",
     "description": "React / Vite / CRA - Monaco loads on demand"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Use Explicit Type Imports",
+    "type": "bad",
+    "code": "import { User, UserRole, fetchUser } from './user'\n// TypeScript can't guarantee User and UserRole won't be in runtime bundle\n// If User is a class (not just a type), it will be included unnecessarily\n\nimport { ComponentProps, useState, ReactNode } from 'react'\n// ComponentProps and ReactNode are types but imported alongside runtime values",
+    "language": "tsx",
+    "description": "ambiguous imports"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Use Explicit Type Imports",
+    "type": "bad",
+    "code": "import { User } from './types'\nimport { fetchUser } from './api'\n\nfunction Profile({ user }: { user: User }) {\n  // ...\n}",
+    "language": "tsx",
+    "description": "mixed without type modifier"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Use Explicit Type Imports",
+    "type": "good",
+    "code": "import type { User, UserRole } from './user'\nimport { fetchUser } from './user'\n\nfunction Profile({ user }: { user: User }) {\n  // User is guaranteed to be erased at compile time\n}",
+    "language": "tsx",
+    "description": "separate type imports"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Use Explicit Type Imports",
+    "type": "good",
+    "code": "import { type User, type UserRole, fetchUser } from './user'\n\n// Or for React imports\nimport { type ComponentProps, type ReactNode, useState, useEffect } from 'react'\n\nfunction Button({ children }: { children: ReactNode }) {\n  const [active, setActive] = useState(false)\n  return <button>{children}</button>\n}",
+    "language": "tsx",
+    "description": "inline type modifier - preferred"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Use Explicit Type Imports",
+    "type": "good",
+    "code": "// types.ts\nexport type { User, UserRole } from './user'\nexport type { Product, ProductCategory } from './product'\n\n// index.ts - re-exporting types\nexport type { User, UserRole } from './types'\nexport { fetchUser, updateUser } from './api'",
+    "language": "tsx",
+    "description": "type-only re-exports"
   },
   {
     "ruleId": "",
@@ -270,6 +382,166 @@
     "code": "import useSWR from 'swr'\n\nfunction UserList() {\n  const { data: users } = useSWR('/api/users', fetcher)\n}",
     "language": "tsx",
     "description": "with SWR - multiple instances share one request"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Built-in React Hooks Correct Usage Patterns",
+    "type": "bad",
+    "code": "function UserForm() {\n  const [user, setUser] = useState({ name: '', email: '' })\n  \n  const updateName = (name: string) => {\n    // ❌ Mutating existing state object\n    user.name = name\n    setUser(user)\n  }\n}",
+    "language": "tsx",
+    "description": "object mutation"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Built-in React Hooks Correct Usage Patterns",
+    "type": "good",
+    "code": "function UserForm() {\n  const [user, setUser] = useState({ name: '', email: '' })\n  \n  const updateName = (name: string) => {\n    // ✅ Create new object\n    setUser(prev => ({ ...prev, name }))\n  }\n}",
+    "language": "tsx",
+    "description": "immutable update"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Built-in React Hooks Correct Usage Patterns",
+    "type": "bad",
+    "code": "function Counter() {\n  const [count, setCount] = useState(0)\n  \n  const incrementThreeTimes = () => {\n    // ❌ All three use same stale count value\n    setCount(count + 1)\n    setCount(count + 1)\n    setCount(count + 1)\n    // Result: count increases by 1, not 3\n  }\n}",
+    "language": "tsx",
+    "description": "stale closure"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Built-in React Hooks Correct Usage Patterns",
+    "type": "good",
+    "code": "function Counter() {\n  const [count, setCount] = useState(0)\n  \n  const incrementThreeTimes = () => {\n    // ✅ Each update uses latest value\n    setCount(c => c + 1)\n    setCount(c => c + 1)\n    setCount(c => c + 1)\n    // Result: count increases by 3\n  }\n}",
+    "language": "tsx",
+    "description": "functional update"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Built-in React Hooks Correct Usage Patterns",
+    "type": "bad",
+    "code": "function ChatRoom({ roomId }: { roomId: string }) {\n  useEffect(() => {\n    const connection = createConnection(roomId)\n    connection.connect()\n    // ❌ Connection never closed - memory leak\n  }, [roomId])\n}",
+    "language": "tsx",
+    "description": "missing cleanup"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Built-in React Hooks Correct Usage Patterns",
+    "type": "good",
+    "code": "function ChatRoom({ roomId }: { roomId: string }) {\n  useEffect(() => {\n    const connection = createConnection(roomId)\n    connection.connect()\n    \n    // ✅ Cleanup on unmount or roomId change\n    return () => connection.disconnect()\n  }, [roomId])\n}",
+    "language": "tsx",
+    "description": "proper cleanup"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Built-in React Hooks Correct Usage Patterns",
+    "type": "bad",
+    "code": "function DataFetcher({ url }: { url: string }) {\n  const [data, setData] = useState(null)\n  \n  useEffect(() => {\n    fetch(url)\n      .then(res => res.json())\n      .then(setData)\n  }) // ❌ Missing dependency array - runs every render\n}",
+    "language": "tsx",
+    "description": "infinite loop"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Built-in React Hooks Correct Usage Patterns",
+    "type": "good",
+    "code": "function DataFetcher({ url }: { url: string }) {\n  const [data, setData] = useState(null)\n  \n  useEffect(() => {\n    let cancelled = false\n    \n    fetch(url)\n      .then(res => res.json())\n      .then(data => {\n        if (!cancelled) setData(data)\n      })\n    \n    // ✅ Prevent state update after unmount\n    return () => { cancelled = true }\n  }, [url]) // ✅ Only re-run when url changes\n}",
+    "language": "tsx",
+    "description": "proper dependencies"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Built-in React Hooks Correct Usage Patterns",
+    "type": "bad",
+    "code": "function FilteredList({ items, filter }: Props) {\n  const [filteredItems, setFilteredItems] = useState<Item[]>([])\n  \n  // ❌ Unnecessary effect and state\n  useEffect(() => {\n    setFilteredItems(items.filter(item => item.name.includes(filter)))\n  }, [items, filter])\n}",
+    "language": "tsx",
+    "description": "setting state for derived values"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Built-in React Hooks Correct Usage Patterns",
+    "type": "good",
+    "code": "function FilteredList({ items, filter }: Props) {\n  // ✅ Derived value computed directly\n  const filteredItems = useMemo(\n    () => items.filter(item => item.name.includes(filter)),\n    [items, filter]\n  )\n}",
+    "language": "tsx",
+    "description": "compute during render"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Built-in React Hooks Correct Usage Patterns",
+    "type": "bad",
+    "code": "function Timer() {\n  const countRef = useRef(0)\n  \n  // ❌ Reading/writing ref during render causes inconsistencies\n  countRef.current += 1\n  \n  return <div>Render count: {countRef.current}</div>\n}",
+    "language": "tsx",
+    "description": "ref in render"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Built-in React Hooks Correct Usage Patterns",
+    "type": "good",
+    "code": "function Timer() {\n  const [count, setCount] = useState(0)\n  const intervalRef = useRef<NodeJS.Timeout | null>(null)\n  \n  useEffect(() => {\n    // ✅ Ref used in effect\n    intervalRef.current = setInterval(() => {\n      setCount(c => c + 1)\n    }, 1000)\n    \n    return () => {\n      if (intervalRef.current) clearInterval(intervalRef.current)\n    }\n  }, [])\n  \n  return <div>Count: {count}</div>\n}",
+    "language": "tsx",
+    "description": "ref in effects/handlers"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Built-in React Hooks Correct Usage Patterns",
+    "type": "bad",
+    "code": "function SearchResults({ query, data }: Props) {\n  const results = useMemo(() => {\n    return data.filter(item => item.name.includes(query))\n  }, [query]) // ❌ Missing 'data' dependency\n}",
+    "language": "tsx",
+    "description": "wrong dependency"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Built-in React Hooks Correct Usage Patterns",
+    "type": "good",
+    "code": "function SearchResults({ query, data }: Props) {\n  const results = useMemo(() => {\n    return data.filter(item => item.name.includes(query))\n  }, [query, data]) // ✅ All dependencies included\n}",
+    "language": "tsx",
+    "description": "all dependencies"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Built-in React Hooks Correct Usage Patterns",
+    "type": "bad",
+    "code": "function Greeting({ name }: { name: string }) {\n  // ❌ Simple concatenation doesn't need memoization\n  const greeting = useMemo(() => `Hello, ${name}!`, [name])\n  \n  // ❌ Inline callback doesn't need useCallback\n  const handleClick = useCallback(() => {\n    console.log('clicked')\n  }, [])\n  \n  return <button onClick={handleClick}>{greeting}</button>\n}",
+    "language": "tsx",
+    "description": "unnecessary memoization"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Built-in React Hooks Correct Usage Patterns",
+    "type": "good",
+    "code": "function DataGrid({ rows, sortConfig }: Props) {\n  // ✅ Expensive sorting operation\n  const sortedRows = useMemo(() => {\n    return [...rows].sort((a, b) => {\n      // Complex sorting logic\n    })\n  }, [rows, sortConfig])\n  \n  // ✅ Callback passed to memoized child\n  const handleRowClick = useCallback((row: Row) => {\n    onRowSelect(row.id)\n  }, [onRowSelect])\n  \n  return <MemoizedTable rows={sortedRows} onRowClick={handleRowClick} />\n}",
+    "language": "tsx",
+    "description": "memoize expensive operations"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Built-in React Hooks Correct Usage Patterns",
+    "type": "bad",
+    "code": "const ThemeContext = createContext<Theme | null>(null)\n\nfunction Button() {\n  // ❌ Could be null if no provider exists\n  const theme = useContext(ThemeContext)\n  return <button className={theme.primary}>Click</button>\n}",
+    "language": "tsx",
+    "description": "missing provider"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Built-in React Hooks Correct Usage Patterns",
+    "type": "good",
+    "code": "const ThemeContext = createContext<Theme>({\n  primary: 'blue',\n  secondary: 'gray'\n})\n\n// Or with null check\nfunction useTheme() {\n  const theme = useContext(ThemeContext)\n  if (!theme) {\n    throw new Error('useTheme must be used within ThemeProvider')\n  }\n  return theme\n}",
+    "language": "tsx",
+    "description": "null check or default value"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Built-in React Hooks Correct Usage Patterns",
+    "type": "bad",
+    "code": "function reducer(state: State, action: Action) {\n  switch (action.type) {\n    case 'add':\n      // ❌ Mutating existing array\n      state.items.push(action.item)\n      return state\n  }\n}",
+    "language": "tsx",
+    "description": "mutating state in reducer"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Built-in React Hooks Correct Usage Patterns",
+    "type": "good",
+    "code": "function reducer(state: State, action: Action): State {\n  switch (action.type) {\n    case 'add':\n      // ✅ Return new state object\n      return {\n        ...state,\n        items: [...state.items, action.item]\n      }\n    default:\n      return state\n  }\n}",
+    "language": "tsx",
+    "description": "immutable reducer"
   },
   {
     "ruleId": "",
@@ -449,6 +721,70 @@
   },
   {
     "ruleId": "",
+    "ruleTitle": "Prefer dayjs Over Native Date",
+    "type": "bad",
+    "code": "function formatDate(date: Date) {\n  // ❌ Native Date formatting is verbose and locale-dependent\n  const year = date.getFullYear()\n  const month = String(date.getMonth() + 1).padStart(2, '0')\n  const day = String(date.getDate()).padStart(2, '0')\n  return `${year}-${month}-${day}`\n}\n\nfunction addDays(date: Date, days: number) {\n  // ❌ Mutates the original date object\n  date.setDate(date.getDate() + days)\n  return date\n}\n\n// Usage\nconst today = new Date()\nconst nextWeek = addDays(today, 7)\nconsole.log(today) // ❌ today is also modified!",
+    "language": "tsx",
+    "description": "native Date - mutable and inconsistent"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Prefer dayjs Over Native Date",
+    "type": "good",
+    "code": "import dayjs from 'dayjs'\n\nfunction formatDate(date: dayjs.Dayjs | Date | string) {\n  // ✅ Clean, chainable API\n  return dayjs(date).format('YYYY-MM-DD')\n}\n\nfunction addDays(date: dayjs.Dayjs | Date | string, days: number) {\n  // ✅ Returns new instance, original unchanged\n  return dayjs(date).add(days, 'day')\n}\n\n// Usage\nconst today = dayjs()\nconst nextWeek = addDays(today, 7)\nconsole.log(today.format()) // ✅ today is unchanged",
+    "language": "tsx",
+    "description": "dayjs - immutable and consistent"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Prefer dayjs Over Native Date",
+    "type": "bad",
+    "code": "function parseServerDate(isoString: string) {\n  // ❌ Parsed in local timezone, causes bugs\n  const date = new Date(isoString)\n  return date.toLocaleDateString()\n}\n\nfunction getStartOfDay(date: Date) {\n  // ❌ Timezone-naive, may give wrong date\n  return new Date(date.getFullYear(), date.getMonth(), date.getDate())\n}",
+    "language": "tsx",
+    "description": "timezone issues with native Date"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Prefer dayjs Over Native Date",
+    "type": "good",
+    "code": "import dayjs from 'dayjs'\nimport utc from 'dayjs/plugin/utc'\nimport timezone from 'dayjs/plugin/timezone'\n\ndayjs.extend(utc)\ndayjs.extend(timezone)\n\nfunction parseServerDate(isoString: string) {\n  // ✅ Explicit timezone handling\n  return dayjs.utc(isoString).local().format('YYYY-MM-DD')\n}\n\nfunction getStartOfDay(date: dayjs.Dayjs, tz: string = 'Asia/Seoul') {\n  // ✅ Timezone-aware start of day\n  return dayjs(date).tz(tz).startOf('day')\n}",
+    "language": "tsx",
+    "description": "timezone-aware with dayjs"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Prefer dayjs Over Native Date",
+    "type": "bad",
+    "code": "function getRelativeTime(date: Date) {\n  const now = new Date()\n  const diff = now.getTime() - date.getTime()\n  const days = Math.floor(diff / (1000 * 60 * 60 * 24))\n  \n  // ❌ Manual, error-prone relative time calculation\n  if (days === 0) return '오늘'\n  if (days === 1) return '어제'\n  if (days < 7) return `${days}일 전`\n  // ... more complex logic\n}\n\nfunction getMonthRange(year: number, month: number) {\n  // ❌ Verbose and easy to get wrong\n  const start = new Date(year, month, 1)\n  const end = new Date(year, month + 1, 0)\n  return { start, end }\n}",
+    "language": "tsx",
+    "description": "complex date calculations"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Prefer dayjs Over Native Date",
+    "type": "good",
+    "code": "import dayjs from 'dayjs'\nimport relativeTime from 'dayjs/plugin/relativeTime'\nimport 'dayjs/locale/ko'\n\ndayjs.extend(relativeTime)\ndayjs.locale('ko')\n\nfunction getRelativeTime(date: dayjs.Dayjs | Date | string) {\n  // ✅ Built-in relative time with localization\n  return dayjs(date).fromNow() // \"3일 전\", \"2시간 전\"\n}\n\nfunction getMonthRange(year: number, month: number) {\n  const target = dayjs().year(year).month(month)\n  // ✅ Clean API for date ranges\n  return {\n    start: target.startOf('month'),\n    end: target.endOf('month')\n  }\n}",
+    "language": "tsx",
+    "description": "dayjs plugins for complex operations"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Prefer dayjs Over Native Date",
+    "type": "bad",
+    "code": "function isExpired(expiryDate: Date) {\n  // ❌ Comparing Date objects directly is unreliable\n  return new Date() > expiryDate\n}\n\nfunction isSameDay(date1: Date, date2: Date) {\n  // ❌ Verbose comparison\n  return date1.getFullYear() === date2.getFullYear() &&\n         date1.getMonth() === date2.getMonth() &&\n         date1.getDate() === date2.getDate()\n}",
+    "language": "tsx",
+    "description": "date comparison with native Date"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Prefer dayjs Over Native Date",
+    "type": "good",
+    "code": "import dayjs from 'dayjs'\nimport isSameOrBefore from 'dayjs/plugin/isSameOrBefore'\n\ndayjs.extend(isSameOrBefore)\n\nfunction isExpired(expiryDate: dayjs.Dayjs | Date | string) {\n  // ✅ Clear, readable comparison\n  return dayjs().isAfter(expiryDate)\n}\n\nfunction isSameDay(date1: dayjs.Dayjs, date2: dayjs.Dayjs) {\n  // ✅ Built-in comparison with granularity\n  return date1.isSame(date2, 'day')\n}\n\nfunction isWithinRange(date: dayjs.Dayjs, start: dayjs.Dayjs, end: dayjs.Dayjs) {\n  // ✅ Range checking\n  return date.isSameOrAfter(start, 'day') && date.isSameOrBefore(end, 'day')\n}",
+    "language": "tsx",
+    "description": "dayjs comparison methods"
+  },
+  {
+    "ruleId": "",
     "ruleTitle": "Use Set/Map for O(1) Lookups",
     "type": "bad",
     "code": "const allowedIds = ['a', 'b', 'c', ...]\nitems.filter(item => allowedIds.includes(item.id))",
@@ -566,6 +902,126 @@
     "code": "function Timestamp() {\n  return (\n    <span suppressHydrationWarning>\n      {new Date().toLocaleString()}\n    </span>\n  )\n}",
     "language": "tsx",
     "description": "suppress expected mismatch only"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "React DOM APIs Correct Usage Patterns",
+    "type": "bad",
+    "code": "// ❌ Creates new root on every call\nfunction renderApp() {\n  const root = createRoot(document.getElementById('root')!)\n  root.render(<App />)\n}\n\nbutton.addEventListener('click', renderApp)",
+    "language": "tsx",
+    "description": "calling createRoot multiple times"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "React DOM APIs Correct Usage Patterns",
+    "type": "good",
+    "code": "import { createRoot } from 'react-dom/client'\n\n// ✅ Create root once\nconst root = createRoot(document.getElementById('root')!)\n\nfunction renderApp(state: AppState) {\n  root.render(<App state={state} />)\n}\n\n// Re-render with new props\nbutton.addEventListener('click', () => renderApp(newState))",
+    "language": "tsx",
+    "description": "create root once, render multiple times"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "React DOM APIs Correct Usage Patterns",
+    "type": "bad",
+    "code": "// ❌ createRoot doesn't preserve server HTML\nconst root = createRoot(document.getElementById('root')!)\nroot.render(<App />)\n// Server-rendered HTML is discarded, causes flicker",
+    "language": "tsx",
+    "description": "using createRoot for SSR"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "React DOM APIs Correct Usage Patterns",
+    "type": "good",
+    "code": "import { hydrateRoot } from 'react-dom/client'\n\n// ✅ Preserves server HTML, attaches event handlers\nhydrateRoot(document.getElementById('root')!, <App />)",
+    "language": "tsx",
+    "description": "hydrateRoot for SSR"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "React DOM APIs Correct Usage Patterns",
+    "type": "bad",
+    "code": "function Modal({ children, onClose }: ModalProps) {\n  // ❌ Click outside doesn't close modal\n  return createPortal(\n    <div className=\"modal\">\n      {children}\n    </div>,\n    document.body\n  )\n}",
+    "language": "tsx",
+    "description": "portal without proper event handling"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "React DOM APIs Correct Usage Patterns",
+    "type": "good",
+    "code": "import { createPortal } from 'react-dom'\n\nfunction Modal({ children, onClose }: ModalProps) {\n  return createPortal(\n    // ✅ Backdrop captures outside clicks\n    <div className=\"modal-backdrop\" onClick={onClose}>\n      <div \n        className=\"modal-content\" \n        onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside\n      >\n        {children}\n      </div>\n    </div>,\n    document.body\n  )\n}",
+    "language": "tsx",
+    "description": "portal with backdrop and event handling"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "React DOM APIs Correct Usage Patterns",
+    "type": "bad",
+    "code": "function Tooltip({ children }: TooltipProps) {\n  // ❌ Element might not exist yet\n  return createPortal(\n    <div className=\"tooltip\">{children}</div>,\n    document.getElementById('tooltip-root')!\n  )\n}",
+    "language": "tsx",
+    "description": "portal target doesn't exist"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "React DOM APIs Correct Usage Patterns",
+    "type": "good",
+    "code": "import { createPortal } from 'react-dom'\nimport { useState, useEffect } from 'react'\n\nfunction Tooltip({ children }: TooltipProps) {\n  const [container, setContainer] = useState<HTMLElement | null>(null)\n  \n  useEffect(() => {\n    // ✅ Create container if it doesn't exist\n    let el = document.getElementById('tooltip-root')\n    if (!el) {\n      el = document.createElement('div')\n      el.id = 'tooltip-root'\n      document.body.appendChild(el)\n    }\n    setContainer(el)\n  }, [])\n  \n  if (!container) return null\n  \n  return createPortal(\n    <div className=\"tooltip\">{children}</div>,\n    container\n  )\n}",
+    "language": "tsx",
+    "description": "ensure portal target exists"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "React DOM APIs Correct Usage Patterns",
+    "type": "bad",
+    "code": "import { flushSync } from 'react-dom'\n\nfunction Form() {\n  const [value, setValue] = useState('')\n  \n  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {\n    // ❌ Unnecessary - normal updates work fine here\n    flushSync(() => {\n      setValue(e.target.value)\n    })\n  }\n}",
+    "language": "tsx",
+    "description": "overusing flushSync"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "React DOM APIs Correct Usage Patterns",
+    "type": "good",
+    "code": "import { flushSync } from 'react-dom'\nimport { useState, useRef } from 'react'\n\nfunction ExpandableList() {\n  const [items, setItems] = useState<string[]>([])\n  const listRef = useRef<HTMLUListElement>(null)\n  \n  const addItem = (item: string) => {\n    // ✅ Need DOM updated before scrolling\n    flushSync(() => {\n      setItems(prev => [...prev, item])\n    })\n    \n    // Now DOM is updated, can safely scroll\n    listRef.current?.lastElementChild?.scrollIntoView()\n  }\n  \n  return <ul ref={listRef}>{items.map(item => <li key={item}>{item}</li>)}</ul>\n}",
+    "language": "tsx",
+    "description": "flushSync for DOM measurements"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "React DOM APIs Correct Usage Patterns",
+    "type": "good",
+    "code": "import { flushSync } from 'react-dom'\n\nfunction Editor() {\n  const [content, setContent] = useState('')\n  const editorRef = useRef<ExternalEditor>(null)\n  \n  const syncWithExternalEditor = () => {\n    // ✅ External library needs DOM to be updated immediately\n    flushSync(() => {\n      setContent(editorRef.current?.getValue() ?? '')\n    })\n    \n    // Now React DOM matches external editor state\n    externalLibrary.notifyUpdate()\n  }\n}",
+    "language": "tsx",
+    "description": "flushSync for third-party integration"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "React DOM APIs Correct Usage Patterns",
+    "type": "good",
+    "code": "import { preload, prefetchDNS, preconnect } from 'react-dom'\n\nfunction App() {\n  // ✅ Preconnect to API origin early\n  preconnect('https://api.example.com')\n  \n  // ✅ Prefetch DNS for third-party resources\n  prefetchDNS('https://analytics.example.com')\n  \n  // ✅ Preload critical resources\n  preload('/fonts/inter.woff2', { as: 'font', type: 'font/woff2' })\n  preload('/hero-image.webp', { as: 'image' })\n  \n  return <MainContent />\n}",
+    "language": "tsx",
+    "description": "resource hints for performance"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "React DOM APIs Correct Usage Patterns",
+    "type": "bad",
+    "code": "function Greeting() {\n  // ❌ Different value on server vs client\n  const time = new Date().toLocaleTimeString()\n  return <p>Current time: {time}</p>\n}",
+    "language": "tsx",
+    "description": "client-only values during SSR"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "React DOM APIs Correct Usage Patterns",
+    "type": "good",
+    "code": "import { useState, useEffect } from 'react'\n\nfunction Greeting() {\n  const [time, setTime] = useState<string | null>(null)\n  \n  useEffect(() => {\n    // ✅ Only runs on client after hydration\n    setTime(new Date().toLocaleTimeString())\n    const interval = setInterval(() => {\n      setTime(new Date().toLocaleTimeString())\n    }, 1000)\n    return () => clearInterval(interval)\n  }, [])\n  \n  // ✅ Server and initial client render match\n  return <p>Current time: {time ?? 'Loading...'}</p>\n}",
+    "language": "tsx",
+    "description": "useEffect for client-only values"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "React DOM APIs Correct Usage Patterns",
+    "type": "good",
+    "code": "function Timestamp() {\n  return (\n    // ✅ Explicitly suppress warning for known mismatch\n    <time suppressHydrationWarning>\n      {new Date().toISOString()}\n    </time>\n  )\n}",
+    "language": "tsx",
+    "description": "suppressHydrationWarning for intentional mismatches"
   },
   {
     "ruleId": "",
@@ -745,6 +1201,46 @@
   },
   {
     "ruleId": "",
+    "ruleTitle": "Provide Default Values for Optional Props",
+    "type": "bad",
+    "code": "interface ButtonProps {\n  onClick?: () => void\n  disabled?: boolean\n  variant?: 'primary' | 'secondary'\n  className?: string\n}\n\nfunction Button({ onClick, disabled, variant, className }: ButtonProps) {\n  // ❌ Need to check for undefined everywhere\n  const handleClick = () => {\n    if (onClick) {\n      onClick()\n    }\n  }\n  \n  // ❌ Conditional class logic is messy\n  const classes = `btn ${variant ? `btn-${variant}` : 'btn-primary'} ${className || ''}`\n  \n  return (\n    <button \n      onClick={handleClick} \n      disabled={disabled ?? false}\n      className={classes}\n    >\n      Click me\n    </button>\n  )\n}",
+    "language": "tsx",
+    "description": "no defaults - requires defensive checks"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Provide Default Values for Optional Props",
+    "type": "bad",
+    "code": "function UserList({ users, onSelect, renderItem }: UserListProps) {\n  // ❌ Creates new function on every render\n  const handleSelect = onSelect || (() => {})\n  \n  // ❌ Creates new function on every render - breaks memoization\n  const defaultRender = renderItem || ((user) => <span>{user.name}</span>)\n  \n  useEffect(() => {\n    // This effect runs on every render because handleSelect changes\n  }, [handleSelect])\n}",
+    "language": "tsx",
+    "description": "defaults in function body - unstable references"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Provide Default Values for Optional Props",
+    "type": "good",
+    "code": "interface ButtonProps {\n  onClick?: () => void\n  disabled?: boolean\n  variant?: 'primary' | 'secondary'\n  className?: string\n}\n\n// ✅ Noop function defined outside component for stable reference\nconst noop = () => {}\n\nfunction Button({ \n  onClick = noop,\n  disabled = false, \n  variant = 'primary',\n  className = ''\n}: ButtonProps) {\n  // ✅ No undefined checks needed\n  const classes = `btn btn-${variant} ${className}`.trim()\n  \n  return (\n    <button onClick={onClick} disabled={disabled} className={classes}>\n      Click me\n    </button>\n  )\n}",
+    "language": "tsx",
+    "description": "defaults in destructuring"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Provide Default Values for Optional Props",
+    "type": "good",
+    "code": "interface UserListProps {\n  users: User[]\n  onSelect?: (user: User) => void\n  renderItem?: (user: User) => ReactNode\n  filterFn?: (user: User) => boolean\n}\n\n// ✅ Define defaults outside component for stable references\nconst defaultOnSelect = () => {}\nconst defaultRenderItem = (user: User) => <span>{user.name}</span>\nconst defaultFilter = () => true\n\nfunction UserList({ \n  users,\n  onSelect = defaultOnSelect,\n  renderItem = defaultRenderItem,\n  filterFn = defaultFilter\n}: UserListProps) {\n  const filteredUsers = useMemo(\n    () => users.filter(filterFn),\n    [users, filterFn] // ✅ filterFn is stable\n  )\n  \n  useEffect(() => {\n    // ✅ Won't re-run unnecessarily\n  }, [onSelect])\n  \n  return (\n    <ul>\n      {filteredUsers.map(user => (\n        <li key={user.id} onClick={() => onSelect(user)}>\n          {renderItem(user)}\n        </li>\n      ))}\n    </ul>\n  )\n}",
+    "language": "tsx",
+    "description": "with stable default functions"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "Provide Default Values for Optional Props",
+    "type": "good",
+    "code": "interface TableProps {\n  data: Row[]\n  columns: Column[]\n  pagination?: {\n    pageSize: number\n    currentPage: number\n  }\n  sorting?: {\n    field: string\n    direction: 'asc' | 'desc'\n  }\n}\n\n// ✅ Default objects defined outside for stability\nconst defaultPagination = { pageSize: 10, currentPage: 1 }\nconst defaultSorting = { field: 'id', direction: 'asc' as const }\n\nfunction Table({\n  data,\n  columns,\n  pagination = defaultPagination,\n  sorting = defaultSorting\n}: TableProps) {\n  // pagination and sorting are always defined with stable references\n}",
+    "language": "tsx",
+    "description": "with complex default objects"
+  },
+  {
+    "ruleId": "",
     "ruleTitle": "Do not wrap a simple expression with a primitive result type in useMemo",
     "type": "bad",
     "code": "function Header({ user, notifications }: Props) {\n  const isLoading = useMemo(() => {\n    return user.isLoading || notifications.isLoading\n  }, [user.isLoading, notifications.isLoading])\n\n  if (isLoading) return <Skeleton />\n  // return some markup\n}",
@@ -758,6 +1254,78 @@
     "code": "function Header({ user, notifications }: Props) {\n  const isLoading = user.isLoading || notifications.isLoading\n\n  if (isLoading) return <Skeleton />\n  // return some markup\n}",
     "language": "tsx",
     "description": "Correct example for Do not wrap a simple expression with a primitive result type in useMemo"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "startTransition Correct Usage Patterns",
+    "type": "bad",
+    "code": "import { startTransition } from 'react'\n\nfunction SearchInput() {\n  const [query, setQuery] = useState('')\n  \n  return (\n    <input\n      value={query}\n      onChange={(e) => {\n        // ❌ Input value should update immediately\n        startTransition(() => {\n          setQuery(e.target.value)\n        })\n      }}\n    />\n  )\n}",
+    "language": "tsx",
+    "description": "using startTransition for urgent updates"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "startTransition Correct Usage Patterns",
+    "type": "good",
+    "code": "import { useState, startTransition } from 'react'\n\nfunction SearchInput() {\n  const [query, setQuery] = useState('')        // Urgent: input display\n  const [results, setResults] = useState([])    // Non-urgent: search results\n  \n  return (\n    <>\n      <input\n        value={query}\n        onChange={(e) => {\n          // ✅ Input updates immediately\n          setQuery(e.target.value)\n          \n          // ✅ Heavy search operation is non-urgent\n          startTransition(() => {\n            setResults(searchItems(e.target.value))\n          })\n        }}\n      />\n      <SearchResults results={results} />\n    </>\n  )\n}",
+    "language": "tsx",
+    "description": "separate urgent and non-urgent updates"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "startTransition Correct Usage Patterns",
+    "type": "bad",
+    "code": "import { startTransition } from 'react'\n\nfunction DataLoader() {\n  const [data, setData] = useState(null)\n  \n  const loadData = async () => {\n    startTransition(async () => {\n      // ❌ Async functions don't work - state update happens after transition ends\n      const result = await fetchData()\n      setData(result)\n    })\n  }\n}",
+    "language": "tsx",
+    "description": "async function inside startTransition"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "startTransition Correct Usage Patterns",
+    "type": "good",
+    "code": "import { startTransition } from 'react'\n\nfunction DataLoader() {\n  const [data, setData] = useState(null)\n  const [isPending, setIsPending] = useState(false)\n  \n  const loadData = async () => {\n    setIsPending(true)\n    const result = await fetchData()\n    \n    // ✅ startTransition wraps the synchronous state update\n    startTransition(() => {\n      setData(result)\n      setIsPending(false)\n    })\n  }\n}",
+    "language": "tsx",
+    "description": "state update before await"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "startTransition Correct Usage Patterns",
+    "type": "good",
+    "code": "import { useState, useTransition } from 'react'\n\nfunction TabContainer() {\n  const [tab, setTab] = useState('home')\n  const [isPending, startTransition] = useTransition()\n  \n  return (\n    <div>\n      <TabBar\n        currentTab={tab}\n        onTabChange={(newTab) => {\n          // ✅ useTransition provides isPending state\n          startTransition(() => {\n            setTab(newTab)\n          })\n        }}\n      />\n      {isPending && <Spinner />}\n      <TabContent tab={tab} />\n    </div>\n  )\n}",
+    "language": "tsx",
+    "description": "useTransition for pending state"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "startTransition Correct Usage Patterns",
+    "type": "bad",
+    "code": "function Form() {\n  const handleSubmit = () => {\n    startTransition(() => {\n      // ❌ No state update inside - transition does nothing\n      console.log('Submitting...')\n      fetch('/api/submit', { method: 'POST' })\n    })\n  }\n}",
+    "language": "tsx",
+    "description": "wrapping non-state-update code"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "startTransition Correct Usage Patterns",
+    "type": "good",
+    "code": "function Form() {\n  const [status, setStatus] = useState('idle')\n  \n  const handleSubmit = async () => {\n    console.log('Submitting...')\n    await fetch('/api/submit', { method: 'POST' })\n    \n    // ✅ Only the state update is wrapped\n    startTransition(() => {\n      setStatus('submitted')\n    })\n  }\n}",
+    "language": "tsx",
+    "description": "only wrap state updates"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "startTransition Correct Usage Patterns",
+    "type": "bad",
+    "code": "function App() {\n  const [items, setItems] = useState([])\n  \n  useEffect(() => {\n    // ❌ startTransition doesn't help during initial render\n    startTransition(() => {\n      setItems(generateLargeList())\n    })\n  }, [])\n}",
+    "language": "tsx",
+    "description": "startTransition for initial render"
+  },
+  {
+    "ruleId": "",
+    "ruleTitle": "startTransition Correct Usage Patterns",
+    "type": "good",
+    "code": "import { useState, useDeferredValue, memo } from 'react'\n\nfunction SearchPage() {\n  const [query, setQuery] = useState('')\n  // ✅ deferredQuery lags behind during rapid updates\n  const deferredQuery = useDeferredValue(query)\n  const isStale = query !== deferredQuery\n  \n  return (\n    <div>\n      <input\n        value={query}\n        onChange={(e) => setQuery(e.target.value)}\n      />\n      <div style={{ opacity: isStale ? 0.5 : 1 }}>\n        <SearchResults query={deferredQuery} />\n      </div>\n    </div>\n  )\n}\n\n// ✅ Memoize to skip re-renders when deferredQuery hasn't changed\nconst SearchResults = memo(function SearchResults({ query }: { query: string }) {\n  const results = searchDatabase(query) // Expensive operation\n  return <ResultsList results={results} />\n})",
+    "language": "tsx",
+    "description": "use Suspense for initial data"
   },
   {
     "ruleId": "",
