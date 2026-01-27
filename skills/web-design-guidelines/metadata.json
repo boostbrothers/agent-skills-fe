@@ -8,6 +8,12 @@
     "https://developer.mozilla.org/en-US/docs/Web/Accessibility",
     "https://web.dev/learn/design/",
     "https://web.dev/learn/accessibility/",
-    "https://www.nngroup.com/articles/"
+    "https://www.nngroup.com/articles/",
+    "https://tailwindcss.com/docs",
+    "https://tailwindcss.com/docs/animation",
+    "https://www.framer.com/motion/",
+    "https://www.framer.com/motion/gestures/",
+    "https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_animations",
+    "https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-motion"
   ]
 }
