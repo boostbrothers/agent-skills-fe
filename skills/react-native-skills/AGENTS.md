@@ -51,10 +51,10 @@ Comprehensive performance optimization guide for React Native applications, desi
    - 8.2 [Modern React Native Styling Patterns](#82-modern-react-native-styling-patterns)
    - 8.3 [Use contentInset for Dynamic ScrollView Spacing](#83-use-contentinset-for-dynamic-scrollview-spacing)
    - 8.4 [Use contentInsetAdjustmentBehavior for Safe Areas](#84-use-contentinsetadjustmentbehavior-for-safe-areas)
-   - 8.5 [Use expo-image for Optimized Images](#85-use-expo-image-for-optimized-images)
-   - 8.6 [Use Galeria for Image Galleries and Lightbox](#86-use-galeria-for-image-galleries-and-lightbox)
+   - 8.5 [Use Galeria for Image Galleries and Lightbox](#85-use-galeria-for-image-galleries-and-lightbox)
+   - 8.6 [Use High-Performance Modals and Bottom Sheets](#86-use-high-performance-modals-and-bottom-sheets)
    - 8.7 [Use Native Menus for Dropdowns and Context Menus](#87-use-native-menus-for-dropdowns-and-context-menus)
-   - 8.8 [Use Native Modals Over JS-Based Bottom Sheets](#88-use-native-modals-over-js-based-bottom-sheets)
+   - 8.8 [Use Optimized Image Components](#88-use-optimized-image-components)
    - 8.9 [Use Pressable Instead of Touchable Components](#89-use-pressable-instead-of-touchable-components)
 9. [Design System](#9-design-system) — **MEDIUM**
    - 9.1 [Use Compound Components Over Polymorphic Children](#91-use-compound-components-over-polymorphic-children)
@@ -410,6 +410,18 @@ function ProductRow({ id, name }: Props) {
   const inCart = useCartStore((s) => s.items.has(id))
   // ...
 }
+
+// Also Correct: Jotai atom selector for fine-grained reactivity
+function ProductRow({ id, name }: Props) {
+  // selectAtom creates a derived atom that only updates when the specific value changes
+  const inCart = useAtomValue(
+    useMemo(
+      () => selectAtom(cartItemsAtom, (items) => items.has(id)),
+      [id]
+    )
+  )
+  // ...
+}
 ```
 
 **Guidelines for list items:**
@@ -418,7 +430,7 @@ function ProductRow({ id, name }: Props) {
 
 - No expensive computations (move to parent or memoize at parent level)
 
-- Prefer Zustand selectors over React Context
+- Prefer Zustand selectors or Jotai atom selectors over React Context
 
 - Minimize useState/useEffect hooks
 
@@ -491,6 +503,18 @@ function DomainItem({ tld }: { tld: Tld }) {
   const domain = useKeywordZustandState((s) => s.keyword + '.' + tld.name)
   return <Text>{domain}</Text>
 }
+
+// Also correct with Jotai: using atom selectors for fine-grained updates
+function DomainItem({ tld }: { tld: Tld }) {
+  // selectAtom creates a derived atom that only updates when the derived value changes
+  const domain = useAtomValue(
+    useMemo(
+      () => selectAtom(keywordAtom, (keyword) => `${keyword}.${tld.name}`),
+      [tld.name]
+    )
+  )
+  return <Text>{domain}</Text>
+}
 ```
 
 **Updating parent array reference:**
@@ -514,9 +538,56 @@ references are stable.
 **With zustand for dynamic data: avoids parent re-renders**
 
 ```tsx
-function DomainItemFavoriteButton({ tld }: { tld: Tld }) {
-  const isFavorited = useFavoritesStore((s) => s.favorites.has(tld.id))
-  return <TldFavoriteButton isFavorited={isFavorited} />
+const useSearchStore = create<{ keyword: string }>(() => ({ keyword: '' }))
+
+function DomainSearch() {
+  const { data: tlds } = useTlds()
+
+  return (
+    <>
+      <SearchInput />
+      <LegendList
+        data={tlds}
+        // if you aren't using React Compiler, wrap renderItem with useCallback
+        renderItem={({ item }) => <DomainItem tld={item} />}
+      />
+    </>
+  )
+}
+
+function DomainItem({ tld }: { tld: Tld }) {
+  // Select only what you need—component only re-renders when keyword changes
+  const keyword = useSearchStore((s) => s.keyword)
+  const domain = `${keyword}.${tld.name}`
+  return <Text>{domain}</Text>
+}
+```
+
+**With Jotai for dynamic data: avoids parent re-renders**
+
+```tsx
+const keywordAtom = atom('')
+
+function DomainSearch() {
+  const { data: tlds } = useTlds()
+
+  return (
+    <>
+      <SearchInput />
+      <LegendList
+        data={tlds}
+        // if you aren't using React Compiler, wrap renderItem with useCallback
+        renderItem={({ item }) => <DomainItem tld={item} />}
+      />
+    </>
+  )
+}
+
+function DomainItem({ tld }: { tld: Tld }) {
+  // Only re-renders when keyword changes
+  const keyword = useAtomValue(keywordAtom)
+  const domain = `${keyword}.${tld.name}`
+  return <Text>{domain}</Text>
 }
 ```
 
@@ -524,9 +595,26 @@ Virtualization can now skip items that haven't changed when typing. Only visible
 
 items (~20) re-render on keystroke, rather than the parent.
 
-**Deriving state within list items based on parent data (avoids parent
+**Deriving state within list items based on parent data: avoids parent re-renders**
 
-re-renders):**
+```tsx
+// With Zustand
+function DomainItemFavoriteButton({ tld }: { tld: Tld }) {
+  const isFavorited = useFavoritesStore((s) => s.favorites.has(tld.id))
+  return <TldFavoriteButton isFavorited={isFavorited} />
+}
+
+// With Jotai
+function DomainItemFavoriteButton({ tld }: { tld: Tld }) {
+  const isFavorited = useAtomValue(
+    useMemo(
+      () => selectAtom(favoritesAtom, (favorites) => favorites.has(tld.id)),
+      [tld.id]
+    )
+  )
+  return <TldFavoriteButton isFavorited={isFavorited} />
+}
+```
 
 For components where the data is conditional based on the parent state, this
 
@@ -540,7 +628,7 @@ Note: if you're using the React Compiler, you can read React Context values
 
 directly within list items. Although this is slightly slower than using a
 
-Zustand selector in most cases, the effect may be negligible.
+Zustand selector or Jotai atom selector in most cases, the effect may be negligible.
 
 ### 2.5 Pass Primitives to List Items for Memoization
 
@@ -737,9 +825,38 @@ function ProductItem({ product }: { product: Product }) {
 }
 ```
 
-Use an optimized image component with built-in caching and placeholder support,
+**Using optimized image components:**
 
-such as `expo-image` or `SolitoImage` (which uses `expo-image` under the hood).
+Use an optimized image component with built-in caching and placeholder support:
+
+- **`react-native-turbo-image`**: High-performance image component with advanced caching, progressive loading, and memory management. Recommended for apps requiring optimal performance.
+
+- **`expo-image`**: Expo's optimized image component with caching and placeholder support.
+
+- **`SolitoImage`**: Cross-platform wrapper that uses `expo-image` under the hood.
+
+**Example with react-native-turbo-image:**
+
+```tsx
+import { TurboImage } from 'react-native-turbo-image'
+
+function ProductItem({ product }: { product: Product }) {
+  const thumbnailUrl = `${product.imageUrl}?w=200&h=200&fit=cover`
+
+  return (
+    <View>
+      <TurboImage
+        source={{ uri: thumbnailUrl }}
+        style={{ width: 100, height: 100 }}
+        cachePolicy="urlCache"
+        placeholder={{ blurhash: product.blurhash }}
+        resizeMode="cover"
+      />
+      <Text>{product.name}</Text>
+    </View>
+  )
+}
+```
 
 Request images at 2x the display size for retina screens.
 
@@ -863,7 +980,7 @@ function MyComponent() {
 
 Use `useAnimatedReaction` only for side effects that don't produce a value
 
-(e.g., triggering haptics, logging, calling `runOnJS`).
+(e.g., triggering haptics, logging, calling `scheduleOnRN` from `react-native-worklets`).
 
 ### 3.3 Use GestureDetector for Animated Press States
 
@@ -919,8 +1036,8 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
   interpolate,
-  runOnJS,
 } from 'react-native-reanimated'
+import { scheduleOnRN } from 'react-native-worklets'
 
 function AnimatedButton({ onPress }: { onPress: () => void }) {
   // Store the press STATE (0 = not pressed, 1 = pressed)
@@ -934,7 +1051,7 @@ function AnimatedButton({ onPress }: { onPress: () => void }) {
       pressed.set(withTiming(0))
     })
     .onEnd(() => {
-      runOnJS(onPress)()
+      scheduleOnRN(onPress)
     })
 
   // Derive visual values from the state
@@ -956,7 +1073,7 @@ function AnimatedButton({ onPress }: { onPress: () => void }) {
 
 Store the press **state** (0 or 1), then derive the scale via `interpolate`.
 
-This keeps the shared value as ground truth. Use `runOnJS` to call JS functions
+This keeps the shared value as ground truth. Use `scheduleOnRN` from `react-native-worklets` to call JS functions
 
 from worklets. Use `.set()` and `.get()` for React Compiler compatibility.
 
@@ -1264,6 +1381,50 @@ const onTap = () => {
   setCount((prev) => prev + 1)
 }
 ```
+
+**Also Correct: useReducer for complex state logic**
+
+```tsx
+type CounterAction = 
+  | { type: 'increment' }
+  | { type: 'decrement' }
+  | { type: 'incrementBy'; payload: number }
+
+const counterReducer = (state: number, action: CounterAction): number => {
+  switch (action.type) {
+    case 'increment':
+      return state + 1
+    case 'decrement':
+      return state - 1
+    case 'incrementBy':
+      return state + action.payload
+    default:
+      return state
+  }
+}
+
+const [count, dispatch] = useReducer(counterReducer, 0)
+
+const onTap = () => {
+  dispatch({ type: 'increment' })
+}
+
+const onDoubleTap = () => {
+  dispatch({ type: 'incrementBy', payload: 2 })
+}
+```
+
+For more complex state updates or when you have multiple related actions, `useReducer` provides a cleaner and more maintainable solution:
+
+Benefits of `useReducer`:
+
+- No closure issues - actions don't capture stale state
+
+- Clearer intent - action types describe what's happening
+
+- Easier to test - reducer is a pure function
+
+- Better for complex state logic with multiple update patterns
 
 ---
 
@@ -1675,7 +1836,9 @@ indicator aligned. For static spacing that never changes, padding is fine.
 
 **Impact: MEDIUM (native safe area handling, no layout shifts)**
 
-Use `contentInsetAdjustmentBehavior="automatic"` on the root ScrollView instead of wrapping content in SafeAreaView or manual padding. This lets iOS handle safe area insets natively with proper scroll behavior.
+**⚠️ Important: iOS Only** - `contentInsetAdjustmentBehavior` is an iOS-only prop and will not work on Android. For cross-platform apps, use `react-native-safe-area-context` instead.
+
+For iOS-only apps or iOS-specific optimizations, `contentInsetAdjustmentBehavior="automatic"` on the root ScrollView provides native safe area handling with proper scroll behavior.
 
 **Incorrect: SafeAreaView wrapper**
 
@@ -1714,14 +1877,16 @@ function MyScreen() {
 }
 ```
 
-**Correct: native content inset adjustment**
+**Correct for iOS-only apps (native content inset adjustment):**
 
 ```tsx
-import { ScrollView, View, Text } from 'react-native'
+import { ScrollView, View, Text, Platform } from 'react-native'
 
 function MyScreen() {
   return (
-    <ScrollView contentInsetAdjustmentBehavior='automatic'>
+    <ScrollView 
+      contentInsetAdjustmentBehavior={Platform.OS === 'ios' ? 'automatic' : undefined}
+    >
       <View>
         <Text>Content</Text>
       </View>
@@ -1730,76 +1895,56 @@ function MyScreen() {
 }
 ```
 
-The native approach handles dynamic safe areas (keyboard, toolbars) and allows content to scroll behind the status bar naturally.
-
-### 8.5 Use expo-image for Optimized Images
-
-**Impact: HIGH (memory efficiency, caching, blurhash placeholders, progressive loading)**
-
-Use `expo-image` instead of React Native's `Image`. It provides memory-efficient caching, blurhash placeholders, progressive loading, and better performance for lists.
-
-**Incorrect: React Native Image**
+**Best practice for cross-platform apps - Option 1 (SafeAreaView wrapper):**
 
 ```tsx
-import { Image } from 'react-native'
+import { ScrollView, View, Text } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
-function Avatar({ url }: { url: string }) {
-  return <Image source={{ uri: url }} style={styles.avatar} />
+function MyScreen() {
+  return (
+    <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+      <ScrollView>
+        <View>
+          <Text>Content</Text>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  )
 }
 ```
 
-**Correct: expo-image**
+For most cases, wrapping your ScrollView with SafeAreaView from react-native-safe-area-context is the simplest approach.
+
+**Best practice for cross-platform apps - Option 2 (useSafeAreaInsets for fine control):**
 
 ```tsx
-import { Image } from 'expo-image'
+import { ScrollView, View, Text } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-function Avatar({ url }: { url: string }) {
-  return <Image source={{ uri: url }} style={styles.avatar} />
+function MyScreen() {
+  const insets = useSafeAreaInsets()
+
+  return (
+    <ScrollView 
+      contentContainerStyle={{ 
+        paddingTop: insets.top,
+        paddingBottom: insets.bottom 
+      }}
+    >
+      <View>
+        <Text>Content</Text>
+      </View>
+    </ScrollView>
+  )
 }
 ```
 
-**With blurhash placeholder:**
+When you need more control over individual edges, use useSafeAreaInsets hook.
 
-```tsx
-<Image
-  source={{ uri: url }}
-  placeholder={{ blurhash: 'LGF5]+Yk^6#M@-5c,1J5@[or[Q6.' }}
-  contentFit="cover"
-  transition={200}
-  style={styles.image}
-/>
-```
+The iOS-only `contentInsetAdjustmentBehavior` handles dynamic safe areas (keyboard, toolbars) and allows content to scroll behind the status bar naturally, but is not suitable for cross-platform development. Use `react-native-safe-area-context` for apps that need to work on both iOS and Android.
 
-**With priority and caching:**
-
-```tsx
-<Image
-  source={{ uri: url }}
-  priority="high"
-  cachePolicy="memory-disk"
-  style={styles.hero}
-/>
-```
-
-**Key props:**
-
-- `placeholder` — Blurhash or thumbnail while loading
-
-- `contentFit` — `cover`, `contain`, `fill`, `scale-down`
-
-- `transition` — Fade-in duration (ms)
-
-- `priority` — `low`, `normal`, `high`
-
-- `cachePolicy` — `memory`, `disk`, `memory-disk`, `none`
-
-- `recyclingKey` — Unique key for list recycling
-
-For cross-platform (web + native), use `SolitoImage` from `solito/image` which uses `expo-image` under the hood.
-
-Reference: [https://docs.expo.dev/versions/latest/sdk/image/](https://docs.expo.dev/versions/latest/sdk/image/)
-
-### 8.6 Use Galeria for Image Galleries and Lightbox
+### 8.5 Use Galeria for Image Galleries and Lightbox
 
 **Impact: MEDIUM**
 
@@ -1900,6 +2045,180 @@ Works with `expo-image`, `SolitoImage`, `react-native` Image, or any image
 component.
 
 Reference: [https://github.com/nandorojo/galeria](https://github.com/nandorojo/galeria)
+
+### 8.6 Use High-Performance Modals and Bottom Sheets
+
+**Impact: HIGH (native performance, gestures, accessibility)**
+
+For modals and bottom sheets, use either native `<Modal>` with `presentationStyle="formSheet"`, React Navigation v7's native form sheet, or `@gorhom/bottom-sheet` for advanced bottom sheet features. Avoid basic JS-based implementations.
+
+**Recommended options:**
+
+- Native Modal with formSheet - Best for simple modals
+
+- React Navigation form sheet - Best for navigation-based modals  
+
+- `@gorhom/bottom-sheet` - Best for complex bottom sheets with snap points, backdrops, and advanced gestures
+
+**Incorrect: basic JS-based bottom sheet without performance optimizations**
+
+```tsx
+import BottomSheet from 'custom-js-bottom-sheet'
+
+function MyScreen() {
+  const sheetRef = useRef<BottomSheet>(null)
+
+  return (
+    <View style={{ flex: 1 }}>
+      <Button onPress={() => sheetRef.current?.expand()} title='Open' />
+      <BottomSheet ref={sheetRef} snapPoints={['50%', '90%']}>
+        <View>
+          <Text>Sheet content</Text>
+        </View>
+      </BottomSheet>
+    </View>
+  )
+}
+```
+
+**Correct - Option 1 (native Modal with formSheet):**
+
+```tsx
+import { Modal, View, Text, Button, useState } from 'react-native'
+
+function MyScreen() {
+  const [visible, setVisible] = useState(false)
+
+  return (
+    <View style={{ flex: 1 }}>
+      <Button onPress={() => setVisible(true)} title='Open' />
+      <Modal
+        visible={visible}
+        presentationStyle='formSheet'
+        animationType='slide'
+        onRequestClose={() => setVisible(false)}
+      >
+        <View>
+          <Text>Sheet content</Text>
+        </View>
+      </Modal>
+    </View>
+  )
+}
+```
+
+Best for simple modals without complex gestures or snap points.
+
+**Correct - Option 2 (React Navigation v7 native form sheet):**
+
+```tsx
+// In your navigator
+<Stack.Screen
+  name='Details'
+  component={DetailsScreen}
+  options={{
+    presentation: 'formSheet',
+    sheetAllowedDetents: 'fitToContents',
+  }}
+/>
+```
+
+Best for navigation-based modals with native transitions.
+
+**Correct - Option 3 (@gorhom/bottom-sheet):**
+
+```tsx
+import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet'
+import { useRef, useMemo } from 'react'
+
+function MyScreen() {
+  const sheetRef = useRef<BottomSheet>(null)
+  const snapPoints = useMemo(() => ['25%', '50%', '90%'], [])
+
+  return (
+    <View style={{ flex: 1 }}>
+      <Button onPress={() => sheetRef.current?.expand()} title='Open' />
+      <BottomSheet
+        ref={sheetRef}
+        index={-1}
+        snapPoints={snapPoints}
+        enablePanDownToClose
+        backdropComponent={BottomSheetBackdrop}
+      >
+        <BottomSheetView>
+          <Text>Sheet content</Text>
+        </BottomSheetView>
+      </BottomSheet>
+    </View>
+  )
+}
+```
+
+Best for complex bottom sheets with snap points, backdrops, and advanced gestures. Built on Reanimated and Gesture Handler for native-level performance.
+
+**With @gorhom/bottom-sheet - advanced features:**
+
+```tsx
+import BottomSheet, { 
+  BottomSheetView, 
+  BottomSheetBackdrop,
+  BottomSheetScrollView 
+} from '@gorhom/bottom-sheet'
+
+function MyScreen() {
+  const sheetRef = useRef<BottomSheet>(null)
+  const snapPoints = useMemo(() => ['25%', '50%', '90%'], [])
+
+  const renderBackdrop = useCallback(
+    (props: any) => (
+      <BottomSheetBackdrop
+        {...props}
+        disappearsOnIndex={-1}
+        appearsOnIndex={0}
+      />
+    ),
+    []
+  )
+
+  return (
+    <BottomSheet
+      ref={sheetRef}
+      index={-1}
+      snapPoints={snapPoints}
+      enablePanDownToClose
+      backdropComponent={renderBackdrop}
+      handleIndicatorStyle={{ backgroundColor: '#999' }}
+      backgroundStyle={{ backgroundColor: '#fff' }}
+    >
+      <BottomSheetScrollView>
+        <Text>Scrollable sheet content</Text>
+      </BottomSheetScrollView>
+    </BottomSheet>
+  )
+}
+```
+
+**Key benefits of @gorhom/bottom-sheet:**
+
+- 60fps animations via Reanimated (runs on UI thread)
+
+- Native-like gestures via Gesture Handler
+
+- Multiple snap points with smooth transitions
+
+- Built-in backdrop support
+
+- Keyboard handling
+
+- Scrollable content support
+
+- Accessibility out of the box
+
+- Haptic feedback
+
+Native modals and high-performance bottom sheets provide swipe-to-dismiss, proper keyboard avoidance, and accessibility out of the box.
+
+Reference: [https://gorhom.dev/react-native-bottom-sheet/](https://gorhom.dev/react-native-bottom-sheet/)
 
 ### 8.7 Use Native Menus for Dropdowns and Context Menus
 
@@ -2073,82 +2392,144 @@ function MenuWithSubmenu() {
 
 Reference: [https://zeego.dev/components/dropdown-menu](https://zeego.dev/components/dropdown-menu)
 
-### 8.8 Use Native Modals Over JS-Based Bottom Sheets
+### 8.8 Use Optimized Image Components
 
-**Impact: HIGH (native performance, gestures, accessibility)**
+**Impact: HIGH (memory efficiency, caching, blurhash placeholders, progressive loading)**
 
-Use native `<Modal>` with `presentationStyle="formSheet"` or React Navigation
+Use optimized image components like `react-native-turbo-image` or `expo-image` instead of React Native's `Image`. They provide memory-efficient caching, blurhash placeholders, progressive loading, and better performance for lists.
 
-v7's native form sheet instead of JS-based bottom sheet libraries. Native modals
+- [react-native-turbo-image](https://github.com/duguyihou/react-native-turbo-image)
 
-have built-in gestures, accessibility, and better performance. Rely on native UI
+- [expo-image](https://docs.expo.dev/versions/latest/sdk/image/)
 
-for low-level primitives.
-
-**Incorrect: JS-based bottom sheet**
+**Incorrect: React Native Image**
 
 ```tsx
-import BottomSheet from 'custom-js-bottom-sheet'
+import { Image } from 'react-native'
 
-function MyScreen() {
-  const sheetRef = useRef<BottomSheet>(null)
+function Avatar({ url }: { url: string }) {
+  return <Image source={{ uri: url }} style={styles.avatar} />
+}
+```
 
+**Correct - Option 1 (react-native-turbo-image):**
+
+```tsx
+import { TurboImage } from 'react-native-turbo-image'
+
+function Avatar({ url }: { url: string }) {
   return (
-    <View style={{ flex: 1 }}>
-      <Button onPress={() => sheetRef.current?.expand()} title='Open' />
-      <BottomSheet ref={sheetRef} snapPoints={['50%', '90%']}>
-        <View>
-          <Text>Sheet content</Text>
-        </View>
-      </BottomSheet>
-    </View>
+    <TurboImage 
+      source={{ uri: url }} 
+      style={styles.avatar}
+      cachePolicy="urlCache"
+      resizeMode="cover"
+    />
   )
 }
 ```
 
-**Correct: native Modal with formSheet**
+`react-native-turbo-image` provides high-performance image loading with advanced caching, progressive loading, and memory management. Recommended for apps requiring optimal performance.
+
+**Correct - Option 2 (expo-image):**
 
 ```tsx
-import { Modal, View, Text, Button } from 'react-native'
+import { Image } from 'expo-image'
 
-function MyScreen() {
-  const [visible, setVisible] = useState(false)
-
-  return (
-    <View style={{ flex: 1 }}>
-      <Button onPress={() => setVisible(true)} title='Open' />
-      <Modal
-        visible={visible}
-        presentationStyle='formSheet'
-        animationType='slide'
-        onRequestClose={() => setVisible(false)}
-      >
-        <View>
-          <Text>Sheet content</Text>
-        </View>
-      </Modal>
-    </View>
-  )
+function Avatar({ url }: { url: string }) {
+  return <Image source={{ uri: url }} style={styles.avatar} />
 }
 ```
 
-**Correct: React Navigation v7 native form sheet**
+`expo-image` is Expo's optimized image component with excellent caching and placeholder support.
+
+**With react-native-turbo-image - blurhash placeholder:**
 
 ```tsx
-// In your navigator
-<Stack.Screen
-  name='Details'
-  component={DetailsScreen}
-  options={{
-    presentation: 'formSheet',
-    sheetAllowedDetents: 'fitToContents',
-  }}
+<TurboImage
+  source={{ uri: url }}
+  style={styles.image}
+  placeholder={{ blurhash: 'LGF5]+Yk^6#M@-5c,1J5@[or[Q6.' }}
+  cachePolicy="urlCache"
+  resizeMode="cover"
+  showPlaceholderOnFailure
 />
 ```
 
-Native modals provide swipe-to-dismiss, proper keyboard avoidance, and
+**With react-native-turbo-image - advanced features:**
 
-accessibility out of the box.
+```tsx
+<TurboImage
+  source={{ uri: url }}
+  style={styles.hero}
+  cachePolicy="dataCache"
+  indicator="progressBar"
+  fadeDuration={300}
+  resize={600}
+  rounded
+/>
+```
+
+**With expo-image - blurhash placeholder:**
+
+```tsx
+<Image
+  source={{ uri: url }}
+  placeholder={{ blurhash: 'LGF5]+Yk^6#M@-5c,1J5@[or[Q6.' }}
+  contentFit="cover"
+  transition={200}
+  style={styles.image}
+/>
+```
+
+**With expo-image - priority and caching:**
+
+```tsx
+<Image
+  source={{ uri: url }}
+  priority="high"
+  cachePolicy="memory-disk"
+  style={styles.hero}
+/>
+```
+
+**Key props for react-native-turbo-image:**
+
+- `placeholder` — Blurhash, thumbhash, or thumbnail while loading
+
+- `cachePolicy` — `urlCache`, `dataCache`, `both`
+
+- `indicator` — `progressBar`, `placeholder`
+
+- `fadeDuration` — Fade-in duration (ms)
+
+- `resize` — Resize image to specific size
+
+- `rounded` — Rounded corners with native performance
+
+- `showPlaceholderOnFailure` — Show placeholder on error
+
+**Key props for expo-image:**
+
+- `placeholder` — Blurhash or thumbnail while loading
+
+- `contentFit` — `cover`, `contain`, `fill`, `scale-down`
+
+- `transition` — Fade-in duration (ms)
+
+- `priority` — `low`, `normal`, `high`
+
+- `cachePolicy` — `memory`, `disk`, `memory-disk`, `none`
+
+- `recyclingKey` — Unique key for list recycling
+
+**Which to choose:**
+
+- Use `react-native-turbo-image` for maximum performance and advanced features
+
+- Use `expo-image` for Expo projects or if you need web support
+
+- For cross-platform (web + native), use `SolitoImage` from `solito/image` which uses `expo-image` under the hood
 
 ### 8.9 Use Pressable Instead of Touchable Components
 
@@ -2584,7 +2965,12 @@ native app.
 2. [https://reactnative.dev](https://reactnative.dev)
 3. [https://docs.swmansion.com/react-native-reanimated](https://docs.swmansion.com/react-native-reanimated)
 4. [https://docs.swmansion.com/react-native-gesture-handler](https://docs.swmansion.com/react-native-gesture-handler)
-5. [https://docs.expo.dev](https://docs.expo.dev)
-6. [https://legendapp.com/open-source/legend-list](https://legendapp.com/open-source/legend-list)
-7. [https://github.com/nandorojo/galeria](https://github.com/nandorojo/galeria)
-8. [https://zeego.dev](https://zeego.dev)
+5. [https://docs.swmansion.com/react-native-worklets](https://docs.swmansion.com/react-native-worklets)
+6. [https://docs.expo.dev](https://docs.expo.dev)
+7. [https://legendapp.com/open-source/legend-list](https://legendapp.com/open-source/legend-list)
+8. [https://github.com/nandorojo/galeria](https://github.com/nandorojo/galeria)
+9. [https://zeego.dev](https://zeego.dev)
+10. [https://jotai.org](https://jotai.org)
+11. [https://zustand-demo.pmnd.rs](https://zustand-demo.pmnd.rs)
+12. [https://github.com/duguyihou/react-native-turbo-image](https://github.com/duguyihou/react-native-turbo-image)
+13. [https://gorhom.dev/react-native-bottom-sheet](https://gorhom.dev/react-native-bottom-sheet)

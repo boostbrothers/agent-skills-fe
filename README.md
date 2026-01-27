@@ -117,7 +117,7 @@ Claim URL:   https://vercel.com/claim-deployment?code=...
 ## Installation
 
 ```bash
-npx add-skill boostbrothers/agent-skills
+npx skills add boostbrothers/agent-skills
 ```
 
 ## Usage

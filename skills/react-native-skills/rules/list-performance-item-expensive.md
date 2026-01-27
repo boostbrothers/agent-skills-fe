@@ -80,13 +80,25 @@ function ProductRow({ id, name }: Props) {
   const inCart = useCartStore((s) => s.items.has(id))
   // ...
 }
+
+// Also Correct: Jotai atom selector for fine-grained reactivity
+function ProductRow({ id, name }: Props) {
+  // selectAtom creates a derived atom that only updates when the specific value changes
+  const inCart = useAtomValue(
+    useMemo(
+      () => selectAtom(cartItemsAtom, (items) => items.has(id)),
+      [id]
+    )
+  )
+  // ...
+}
 ```
 
 **Guidelines for list items:**
 
 - No queries or data fetching
 - No expensive computations (move to parent or memoize at parent level)
-- Prefer Zustand selectors over React Context
+- Prefer Zustand selectors or Jotai atom selectors over React Context
 - Minimize useState/useEffect hooks
 - Pass pre-computed values as props
 

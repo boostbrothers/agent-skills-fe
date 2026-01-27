@@ -48,6 +48,35 @@ function ProductItem({ product }: { product: Product }) {
 }
 ```
 
-Use an optimized image component with built-in caching and placeholder support,
-such as `expo-image` or `SolitoImage` (which uses `expo-image` under the hood).
+**Using optimized image components:**
+
+Use an optimized image component with built-in caching and placeholder support:
+
+- **`react-native-turbo-image`**: High-performance image component with advanced caching, progressive loading, and memory management. Recommended for apps requiring optimal performance.
+- **`expo-image`**: Expo's optimized image component with caching and placeholder support.
+- **`SolitoImage`**: Cross-platform wrapper that uses `expo-image` under the hood.
+
+**Example with react-native-turbo-image:**
+
+```tsx
+import { TurboImage } from 'react-native-turbo-image'
+
+function ProductItem({ product }: { product: Product }) {
+  const thumbnailUrl = `${product.imageUrl}?w=200&h=200&fit=cover`
+
+  return (
+    <View>
+      <TurboImage
+        source={{ uri: thumbnailUrl }}
+        style={{ width: 100, height: 100 }}
+        cachePolicy="urlCache"
+        placeholder={{ blurhash: product.blurhash }}
+        resizeMode="cover"
+      />
+      <Text>{product.name}</Text>
+    </View>
+  )
+}
+```
+
 Request images at 2x the display size for retina screens.

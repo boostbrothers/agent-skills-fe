@@ -8,9 +8,14 @@
     "https://reactnative.dev",
     "https://docs.swmansion.com/react-native-reanimated",
     "https://docs.swmansion.com/react-native-gesture-handler",
+    "https://docs.swmansion.com/react-native-worklets",
     "https://docs.expo.dev",
     "https://legendapp.com/open-source/legend-list",
     "https://github.com/nandorojo/galeria",
-    "https://zeego.dev"
+    "https://zeego.dev",
+    "https://jotai.org",
+    "https://zustand-demo.pmnd.rs",
+    "https://github.com/duguyihou/react-native-turbo-image",
+    "https://gorhom.dev/react-native-bottom-sheet"
   ]
 }

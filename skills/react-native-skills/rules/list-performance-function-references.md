@@ -63,6 +63,18 @@ function DomainItem({ tld }: { tld: Tld }) {
   const domain = useKeywordZustandState((s) => s.keyword + '.' + tld.name)
   return <Text>{domain}</Text>
 }
+
+// Also correct with Jotai: using atom selectors for fine-grained updates
+function DomainItem({ tld }: { tld: Tld }) {
+  // selectAtom creates a derived atom that only updates when the derived value changes
+  const domain = useAtomValue(
+    useMemo(
+      () => selectAtom(keywordAtom, (keyword) => `${keyword}.${tld.name}`),
+      [tld.name]
+    )
+  )
+  return <Text>{domain}</Text>
+}
 ```
 
 **Updating parent array reference:**
@@ -109,11 +121,38 @@ function DomainItem({ tld }: { tld: Tld }) {
 }
 ```
 
+**With Jotai for dynamic data (avoids parent re-renders):**
+
+```tsx
+const keywordAtom = atom('')
+
+function DomainSearch() {
+  const { data: tlds } = useTlds()
+
+  return (
+    <>
+      <SearchInput />
+      <LegendList
+        data={tlds}
+        // if you aren't using React Compiler, wrap renderItem with useCallback
+        renderItem={({ item }) => <DomainItem tld={item} />}
+      />
+    </>
+  )
+}
+
+function DomainItem({ tld }: { tld: Tld }) {
+  // Only re-renders when keyword changes
+  const keyword = useAtomValue(keywordAtom)
+  const domain = `${keyword}.${tld.name}`
+  return <Text>{domain}</Text>
+}
+```
+
 Virtualization can now skip items that haven't changed when typing. Only visible
 items (~20) re-render on keystroke, rather than the parent.
 
-**Deriving state within list items based on parent data (avoids parent
-re-renders):**
+**Deriving state within list items based on parent data (avoids parent re-renders):**
 
 For components where the data is conditional based on the parent state, this
 pattern is even more important. For example, if you are checking if an item is
@@ -121,12 +160,24 @@ favorited, toggling favorites only re-renders one component if the item itself
 is in charge of accessing the state rather than the parent:
 
 ```tsx
+// With Zustand
 function DomainItemFavoriteButton({ tld }: { tld: Tld }) {
   const isFavorited = useFavoritesStore((s) => s.favorites.has(tld.id))
+  return <TldFavoriteButton isFavorited={isFavorited} />
+}
+
+// With Jotai
+function DomainItemFavoriteButton({ tld }: { tld: Tld }) {
+  const isFavorited = useAtomValue(
+    useMemo(
+      () => selectAtom(favoritesAtom, (favorites) => favorites.has(tld.id)),
+      [tld.id]
+    )
+  )
   return <TldFavoriteButton isFavorited={isFavorited} />
 }
 ```
 
 Note: if you're using the React Compiler, you can read React Context values
 directly within list items. Although this is slightly slower than using a
-Zustand selector in most cases, the effect may be negligible.
+Zustand selector or Jotai atom selector in most cases, the effect may be negligible.

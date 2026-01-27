@@ -52,8 +52,8 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
   interpolate,
-  runOnJS,
 } from 'react-native-reanimated'
+import { scheduleOnRN } from 'react-native-worklets'
 
 function AnimatedButton({ onPress }: { onPress: () => void }) {
   // Store the press STATE (0 = not pressed, 1 = pressed)
@@ -67,7 +67,7 @@ function AnimatedButton({ onPress }: { onPress: () => void }) {
       pressed.set(withTiming(0))
     })
     .onEnd(() => {
-      runOnJS(onPress)()
+      scheduleOnRN(onPress)
     })
 
   // Derive visual values from the state
@@ -88,7 +88,7 @@ function AnimatedButton({ onPress }: { onPress: () => void }) {
 ```
 
 Store the press **state** (0 or 1), then derive the scale via `interpolate`.
-This keeps the shared value as ground truth. Use `runOnJS` to call JS functions
+This keeps the shared value as ground truth. Use `scheduleOnRN` from `react-native-worklets` to call JS functions
 from worklets. Use `.set()` and `.get()` for React Compiler compatibility.
 
 Reference:

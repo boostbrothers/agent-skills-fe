@@ -89,3 +89,43 @@ const onTap = () => {
   setCount((prev) => prev + 1)
 }
 ```
+
+**Also Correct (useReducer for complex state logic):**
+
+For more complex state updates or when you have multiple related actions, `useReducer` provides a cleaner and more maintainable solution:
+
+```tsx
+type CounterAction = 
+  | { type: 'increment' }
+  | { type: 'decrement' }
+  | { type: 'incrementBy'; payload: number }
+
+const counterReducer = (state: number, action: CounterAction): number => {
+  switch (action.type) {
+    case 'increment':
+      return state + 1
+    case 'decrement':
+      return state - 1
+    case 'incrementBy':
+      return state + action.payload
+    default:
+      return state
+  }
+}
+
+const [count, dispatch] = useReducer(counterReducer, 0)
+
+const onTap = () => {
+  dispatch({ type: 'increment' })
+}
+
+const onDoubleTap = () => {
+  dispatch({ type: 'incrementBy', payload: 2 })
+}
+```
+
+Benefits of `useReducer`:
+- No closure issues - actions don't capture stale state
+- Clearer intent - action types describe what's happening
+- Easier to test - reducer is a pure function
+- Better for complex state logic with multiple update patterns
