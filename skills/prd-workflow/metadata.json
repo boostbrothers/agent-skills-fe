@@ -1,0 +1,7 @@
+{
+  "version": "1.0.0",
+  "organization": "ddocdoc",
+  "date": "February 2026",
+  "abstract": "PRD(제품 요구사항 정의서) 자동 생성 및 인수테스트 워크플로우 가이드. JIRA, Confluence, Figma 데이터를 수집하여 표준 PRD를 생성하고, UI/UX 중심 인수테스트를 자동 생성하여 Confluence에 업로드하는 전체 프로세스를 포함합니다.",
+  "references": []
+}
