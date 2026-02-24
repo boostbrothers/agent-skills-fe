@@ -77,8 +77,10 @@ Related_Tasks: [Summary of Backend/Frontend tasks found]
 
 생성된 PRD를 저장합니다:
 
-1. `apps/` 폴더 내 디렉토리 목록을 조회
-2. 사용자에게 프로젝트 선택 요청
-3. `apps/[SELECTED_PROJECT]/docs/` 경로에 저장
+1. **경로 질문**: 사용자에게 PRD 저장 경로 선호를 먼저 질문
+2. **유저 직접 지정**: 사용자가 특정 경로를 지정하면 해당 경로 사용
+3. **자동 감지** (사용자가 경로를 지정하지 않은 경우):
+   - `apps/` 디렉토리 존재 시 (모노레포): 하위 디렉토리 목록 제시 → 사용자 프로젝트 선택 → `apps/{선택한 프로젝트}/docs/`
+   - `apps/` 디렉토리 미존재 시 (싱글 프로젝트): 프로젝트 루트의 `docs/`
 4. 디렉토리 미존재 시 생성
 5. 파일명: `PRD_JiraIssueKey_FeatureName_v1.0.md`

@@ -391,8 +391,11 @@ space_key: {{CONFLUENCE_SPACE_KEY}}
 
 #### PRD Auto-Read Procedure
 
-1. **Search location**: `docs/PRD/` folder
-2. **Filename pattern**: `.md` files starting with `[PRD]`
+1. **Search location** (우선순위 순):
+   - PRD 생성 시 사용한 저장 경로가 있으면 해당 경로 우선 활용
+   - 모노레포 (`apps/` 존재): `apps/*/docs/` 하위에서 검색
+   - 싱글 프로젝트 (`apps/` 미존재): 프로젝트 루트의 `docs/` 하위에서 검색
+2. **Filename pattern**: `.md` files starting with `[PRD]` or `PRD_`
 3. **Exclude files**: `PRD_GENERATOR.md`, `PRD_EXAMPLE.md`, `ARGUMENT_TEST_GENERATOR.md`
 4. **Selection criteria**: Most recently modified file
 5. **Auto-extract**: JIRA Issue Key, Feature Name, Version, SRS (UI/UX only), Screen Information
@@ -532,9 +535,13 @@ Confluence 페이지에서 추출:
 
 #### File Save
 
-1. `apps/` 디렉토리 목록 조회 → 사용자 프로젝트 선택
-2. `apps/[PROJECT]/docs/` 경로에 저장
-3. 파일명: `PRD_JiraIssueKey_FeatureName_v1.0.md`
+1. **경로 질문**: 사용자에게 PRD 저장 경로 선호를 먼저 질문
+2. **유저 직접 지정**: 사용자가 특정 경로를 지정하면 해당 경로 사용
+3. **자동 감지** (사용자가 경로를 지정하지 않은 경우):
+   - `apps/` 디렉토리 존재 시 (모노레포): 하위 디렉토리 목록 제시 → 사용자 프로젝트 선택 → `apps/{선택한 프로젝트}/docs/`
+   - `apps/` 디렉토리 미존재 시 (싱글 프로젝트): 프로젝트 루트의 `docs/`
+4. 디렉토리 미존재 시 생성
+5. 파일명: `PRD_JiraIssueKey_FeatureName_v1.0.md`
 
 ---
 

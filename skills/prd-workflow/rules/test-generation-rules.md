@@ -32,12 +32,16 @@ space_key: {{CONFLUENCE_SPACE_KEY}}
 
 **Finding PRD Files:**
 
-1. **Search location**: `docs/PRD/` folder (or the project's `docs/` folder)
-2. **Filename pattern**: `.md` files starting with `[PRD]`
+1. **Search location** (우선순위 순):
+   - PRD 생성 시 사용한 저장 경로가 있으면 해당 경로 우선 활용
+   - 모노레포 (`apps/` 존재): `apps/*/docs/` 하위에서 검색
+   - 싱글 프로젝트 (`apps/` 미존재): 프로젝트 루트의 `docs/` 하위에서 검색
+2. **Filename pattern**: `.md` files starting with `[PRD]` or `PRD_`
 3. **Exclude files**: `PRD_GENERATOR.md`, `PRD_EXAMPLE.md`, `ARGUMENT_TEST_GENERATOR.md`
 4. **Selection criteria**: Select the **most recently modified file** among files matching the above conditions
 5. **Execution order**:
-   - Check file list with `ls -lt docs/PRD/` command
+   - Detect project structure (`apps/` existence)
+   - Search matching PRD files in the appropriate docs directory
    - Select the latest PRD file matching the conditions
    - Read entire file contents
 
