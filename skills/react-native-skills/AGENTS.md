@@ -33,16 +33,23 @@ Comprehensive performance optimization guide for React Native applications, desi
    - 2.7 [Use Compressed Images in Lists](#27-use-compressed-images-in-lists)
 3. [Animation](#3-animation) — **HIGH**
    - 3.1 [Animate Transform and Opacity Instead of Layout Properties](#31-animate-transform-and-opacity-instead-of-layout-properties)
-   - 3.2 [Prefer useDerivedValue Over useAnimatedReaction](#32-prefer-usederivedvalue-over-useanimatedreaction)
-   - 3.3 [Use GestureDetector for Animated Press States](#33-use-gesturedetector-for-animated-press-states)
+   - 3.2 [Control Non-Style Props on UI Thread with useAnimatedProps](#32-control-non-style-props-on-ui-thread-with-useanimatedprops)
+   - 3.3 [Prefer useDerivedValue Over useAnimatedReaction](#33-prefer-usederivedvalue-over-useanimatedreaction)
+   - 3.4 [Use GestureDetector for Animated Press States](#34-use-gesturedetector-for-animated-press-states)
 4. [Scroll Performance](#4-scroll-performance) — **HIGH**
    - 4.1 [Never Track Scroll Position in useState](#41-never-track-scroll-position-in-usestate)
 5. [React State](#5-react-state) — **MEDIUM**
    - 5.1 [Minimize State Variables and Derive Values](#51-minimize-state-variables-and-derive-values)
    - 5.2 [Use fallback state instead of initialState](#52-use-fallback-state-instead-of-initialstate)
-   - 5.3 [useState Dispatch updaters for State That Depends on Current Value](#53-usestate-dispatch-updaters-for-state-that-depends-on-current-value)
+   - 5.3 [Use useRef for Transient Values That Don't Affect Rendering](#53-use-useref-for-transient-values-that-dont-affect-rendering)
+   - 5.4 [useState Dispatch updaters for State That Depends on Current Value](#54-usestate-dispatch-updaters-for-state-that-depends-on-current-value)
 6. [State Architecture](#6-state-architecture) — **MEDIUM**
-   - 6.1 [State Must Represent Ground Truth](#61-state-must-represent-ground-truth)
+   - 6.1 [Never Use React Context for Frequently Changing State](#61-never-use-react-context-for-frequently-changing-state)
+   - 6.2 [State Must Represent Ground Truth](#62-state-must-represent-ground-truth)
+   - 6.3 [Use atomFamily for List Item Atoms in Virtualized Lists](#63-use-atomfamily-for-list-item-atoms-in-virtualized-lists)
+   - 6.4 [Use focusAtom to Subscribe to Nested State Fields](#64-use-focusatom-to-subscribe-to-nested-state-fields)
+   - 6.5 [Use splitAtom for Independent List Item Updates](#65-use-splitatom-for-independent-list-item-updates)
+   - 6.6 [Use useAtomValue and useSetAtom for Minimal Subscriptions](#66-use-useatomvalue-and-usesetatom-for-minimal-subscriptions)
 7. [React Compiler](#7-react-compiler) — **MEDIUM**
    - 7.1 [Destructure Functions Early in Render (React Compiler)](#71-destructure-functions-early-in-render-react-compiler)
    - 7.2 [Use .get() and .set() for Reanimated Shared Values (not .value)](#72-use-get-and-set-for-reanimated-shared-values-not-value)
@@ -930,7 +937,101 @@ function SlideIn({ visible }: { visible: boolean }) {
 
 GPU-accelerated properties: `transform` (translate, scale, rotate), `opacity`. Everything else triggers layout.
 
-### 3.2 Prefer useDerivedValue Over useAnimatedReaction
+### 3.2 Control Non-Style Props on UI Thread with useAnimatedProps
+
+**Impact: HIGH (eliminates re-renders for UI prop changes)**
+
+Use `useAnimatedProps` with `Animated.createAnimatedComponent` to control
+
+non-style UI props (`disabled`, `pointerEvents`, `editable`, `scrollEnabled`)
+
+directly on the UI thread. This avoids `useState` re-renders entirely.
+
+`useAnimatedStyle` handles style properties. `useAnimatedProps` handles
+
+everything else—component props that aren't styles but still need to react
+
+to shared values.
+
+**Incorrect: runOnJS bridges back to JS thread, causing re-render**
+
+```tsx
+import { useState } from 'react'
+import { TextInput, View } from 'react-native'
+import Animated, {
+  useSharedValue,
+  useAnimatedReaction,
+  runOnJS,
+} from 'react-native-reanimated'
+
+function SubmitForm() {
+  const isSubmitting = useSharedValue(false)
+  const [disabled, setDisabled] = useState(false)
+
+  // Bad: bridges UI thread → JS thread → setState → re-render
+  useAnimatedReaction(
+    () => isSubmitting.get(),
+    (current) => {
+      runOnJS(setDisabled)(current)
+    }
+  )
+
+  return (
+    <View pointerEvents={disabled ? 'none' : 'auto'}>
+      <TextInput editable={!disabled} />
+    </View>
+  )
+}
+```
+
+**Correct: useAnimatedProps stays on UI thread, zero re-renders**
+
+```tsx
+import { TextInput, View } from 'react-native'
+import Animated, {
+  useSharedValue,
+  useAnimatedProps,
+} from 'react-native-reanimated'
+
+const AnimatedTextInput = Animated.createAnimatedComponent(TextInput)
+const AnimatedView = Animated.createAnimatedComponent(View)
+
+function SubmitForm() {
+  const isSubmitting = useSharedValue(false)
+
+  const viewProps = useAnimatedProps(() => ({
+    pointerEvents: isSubmitting.get() ? 'none' as const : 'auto' as const,
+  }))
+
+  const inputProps = useAnimatedProps(() => ({
+    editable: !isSubmitting.get(),
+  }))
+
+  return (
+    <AnimatedView animatedProps={viewProps}>
+      <AnimatedTextInput animatedProps={inputProps} />
+    </AnimatedView>
+  )
+}
+```
+
+**Common use cases for useAnimatedProps:**
+
+| Prop              | Component         | Example                                      |
+
+|-------------------|-------------------|----------------------------------------------|
+
+| `disabled`        | Button, Pressable | Disable during animation or submission       |
+
+| `pointerEvents`   | View              | Block touches during transitions             |
+
+| `editable`        | TextInput         | Lock input during async operations           |
+
+| `scrollEnabled`   | ScrollView        | Disable scroll during gesture interactions   |
+
+Reference: [https://docs.swmansion.com/react-native-reanimated/docs/core/useAnimatedProps](https://docs.swmansion.com/react-native-reanimated/docs/core/useAnimatedProps)
+
+### 3.3 Prefer useDerivedValue Over useAnimatedReaction
 
 **Impact: MEDIUM (cleaner code, automatic dependency tracking)**
 
@@ -982,7 +1083,7 @@ Use `useAnimatedReaction` only for side effects that don't produce a value
 
 (e.g., triggering haptics, logging, calling `scheduleOnRN` from `react-native-worklets`).
 
-### 3.3 Use GestureDetector for Animated Press States
+### 3.4 Use GestureDetector for Animated Press States
 
 **Impact: MEDIUM (UI thread animations, smoother press feedback)**
 
@@ -1290,7 +1391,115 @@ function ProfileForm({ data }: { data: User }) {
 }
 ```
 
-### 5.3 useState Dispatch updaters for State That Depends on Current Value
+### 5.3 Use useRef for Transient Values That Don't Affect Rendering
+
+**Impact: MEDIUM (eliminates re-renders from non-visual state updates)**
+
+Use `useRef` for values that don't need to trigger re-renders: timer IDs,
+
+previous values, measurement caches, `isMounted` flags, and intermediate
+
+computation results. Storing these in `useState` causes unnecessary re-renders.
+
+**Incorrect: useState for timer ID — re-renders on every debounce reset**
+
+```tsx
+import { useState, useEffect } from 'react'
+
+function SearchInput() {
+  const [query, setQuery] = useState('')
+  const [timerId, setTimerId] = useState<ReturnType<typeof setTimeout> | null>(
+    null
+  )
+
+  const handleChange = (text: string) => {
+    setQuery(text)
+    if (timerId) clearTimeout(timerId)
+    // Bad: setTimerId triggers a re-render every keystroke (on top of setQuery)
+    setTimerId(setTimeout(() => search(text), 300))
+  }
+
+  return <TextInput value={query} onChangeText={handleChange} />
+}
+```
+
+**Correct: useRef for timer ID — no extra re-renders**
+
+```tsx
+import { useState, useRef, useEffect } from 'react'
+
+function SearchInput() {
+  const [query, setQuery] = useState('')
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const handleChange = (text: string) => {
+    setQuery(text)
+    if (timerRef.current) clearTimeout(timerRef.current)
+    // Good: updating a ref doesn't trigger re-render
+    timerRef.current = setTimeout(() => search(text), 300)
+  }
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [])
+
+  return <TextInput value={query} onChangeText={handleChange} />
+}
+```
+
+**Other common useRef use cases:**
+
+```tsx
+// Previous value tracking
+function usePrevious<T>(value: T): T | undefined {
+  const ref = useRef<T | undefined>(undefined)
+  useEffect(() => {
+    ref.current = value
+  })
+  return ref.current
+}
+
+// Layout measurement cache
+function MeasuredComponent() {
+  const layoutRef = useRef<{ width: number; height: number } | null>(null)
+
+  const onLayout = (e: LayoutChangeEvent) => {
+    // Good: caching measurements doesn't need a re-render
+    layoutRef.current = {
+      width: e.nativeEvent.layout.width,
+      height: e.nativeEvent.layout.height,
+    }
+  }
+
+  return <View onLayout={onLayout} />
+}
+
+// Gesture state tracking (between handlers)
+function DraggableItem() {
+  const startPosition = useRef({ x: 0, y: 0 })
+
+  const panGesture = Gesture.Pan()
+    .onStart((e) => {
+      startPosition.current = { x: e.absoluteX, y: e.absoluteY }
+    })
+    .onEnd((e) => {
+      const dx = e.absoluteX - startPosition.current.x
+      // use dx for logic...
+    })
+
+  // ...
+}
+```
+
+**Rule of thumb:** If updating a value should NOT cause the UI to change,
+
+use `useRef`. If it should, use `useState`.
+
+Reference: [https://react.dev/reference/react/useRef](https://react.dev/reference/react/useRef)
+
+### 5.4 useState Dispatch updaters for State That Depends on Current Value
 
 **Impact: MEDIUM (avoids stale closures, prevents unnecessary re-renders)**
 
@@ -1434,7 +1643,122 @@ Benefits of `useReducer`:
 
 Ground truth principles for state variables and derived values.
 
-### 6.1 State Must Represent Ground Truth
+### 6.1 Never Use React Context for Frequently Changing State
+
+**Impact: HIGH (prevents cascading re-renders across consumer tree)**
+
+React Context re-renders every consumer when the provider value changes—there
+
+is no built-in selector mechanism. For state that changes often (input text,
+
+toggles, counters, filters), use Jotai atoms or Zustand stores instead.
+
+Context is appropriate for values that change rarely: theme, locale, auth
+
+status, feature flags.
+
+**Incorrect: Context with frequent updates re-renders all consumers**
+
+```tsx
+import { createContext, useContext, useState, type ReactNode } from 'react'
+
+interface SearchContextType {
+  query: string
+  setQuery: (q: string) => void
+  filters: Filter[]
+  setFilters: (f: Filter[]) => void
+}
+
+const SearchContext = createContext<SearchContextType | null>(null)
+
+function SearchProvider({ children }: { children: ReactNode }) {
+  const [query, setQuery] = useState('')
+  const [filters, setFilters] = useState<Filter[]>([])
+
+  return (
+    <SearchContext.Provider value={{ query, setQuery, filters, setFilters }}>
+      {children}
+    </SearchContext.Provider>
+  )
+}
+
+// Bad: FilterPanel re-renders on every keystroke in SearchInput
+function FilterPanel() {
+  const { filters, setFilters } = useContext(SearchContext)!
+  return <FilterList filters={filters} onChange={setFilters} />
+}
+
+function SearchInput() {
+  const { query, setQuery } = useContext(SearchContext)!
+  return <TextInput value={query} onChangeText={setQuery} />
+}
+```
+
+**Correct: Jotai atoms — each component subscribes only to what it needs**
+
+```tsx
+import { atom } from 'jotai'
+import { useAtom, useAtomValue } from 'jotai'
+
+const queryAtom = atom('')
+const filtersAtom = atom<Filter[]>([])
+
+// Good: FilterPanel only re-renders when filters change
+function FilterPanel() {
+  const [filters, setFilters] = useAtom(filtersAtom)
+  return <FilterList filters={filters} onChange={setFilters} />
+}
+
+// Good: SearchInput only re-renders when query changes
+function SearchInput() {
+  const [query, setQuery] = useAtom(queryAtom)
+  return <TextInput value={query} onChangeText={setQuery} />
+}
+```
+
+**Correct: Zustand store with selectors**
+
+```tsx
+import { create } from 'zustand'
+
+interface SearchStore {
+  query: string
+  filters: Filter[]
+  setQuery: (q: string) => void
+  setFilters: (f: Filter[]) => void
+}
+
+const useSearchStore = create<SearchStore>((set) => ({
+  query: '',
+  filters: [],
+  setQuery: (query) => set({ query }),
+  setFilters: (filters) => set({ filters }),
+}))
+
+// Good: only re-renders when filters change
+function FilterPanel() {
+  const filters = useSearchStore((s) => s.filters)
+  const setFilters = useSearchStore((s) => s.setFilters)
+  return <FilterList filters={filters} onChange={setFilters} />
+}
+```
+
+**When Context is appropriate:**
+
+```tsx
+// Good: theme changes rarely (user toggle, system event)
+const ThemeContext = createContext<Theme>(defaultTheme)
+
+// Good: auth changes rarely (login, logout)
+const AuthContext = createContext<AuthState | null>(null)
+
+// Good: locale changes rarely (settings change)
+const LocaleContext = createContext<string>('en')
+```
+
+Reference: [https://react.dev/learn/passing-data-deeply-with-context](https://react.dev/learn/passing-data-deeply-with-context)
+
+### 6.2 State Must Represent Ground Truth
 
 **Impact: HIGH (cleaner logic, easier debugging, single source of truth)**
 
@@ -1519,6 +1843,426 @@ const height = isExpanded ? 200 : 0
 ```
 
 State is the minimal truth. Everything else is derived.
+
+### 6.3 Use atomFamily for List Item Atoms in Virtualized Lists
+
+**Impact: HIGH (prevents atom instance proliferation during FlashList cell recycling)**
+
+Use `atomFamily` to create parameter-keyed atom factories for list item state.
+
+When a list item component creates atoms dynamically (via `useMemo` or inline),
+
+every mount produces a new atom instance. In FlashList/FlatList where cells are
+
+rapidly mounted, unmounted, and recycled during scrolling, this leads to
+
+excessive atom instances and growing Jotai store overhead.
+
+`atomFamily` caches atom instances by parameter (typically an ID), so the same
+
+key always returns the same atom—regardless of component lifecycle.
+
+**Incorrect: useMemo atom — new instance on every mount, proliferates during scroll**
+
+```tsx
+import { atom, useAtomValue } from 'jotai'
+import { selectAtom } from 'jotai/utils'
+
+const ordersAtom = atom<Record<string, Order>>({})
+
+function OrderItem({ id }: { id: string }) {
+  // Bad: new atom instance every time this component mounts
+  // FlashList recycles cells → repeated mount/unmount → atom instances pile up
+  const orderAtom = useMemo(
+    () => selectAtom(ordersAtom, (orders) => orders[id]),
+    [id]
+  )
+  const order = useAtomValue(orderAtom)
+
+  return <Text>{order.title}</Text>
+}
+```
+
+**Correct: atomFamily — cached by ID, single instance per key**
+
+```tsx
+import { atom, useAtomValue } from 'jotai'
+import { atomFamily, selectAtom } from 'jotai/utils'
+
+const ordersAtom = atom<Record<string, Order>>({})
+
+// Good: atomFamily caches by id — same id always returns the same atom
+const orderAtomFamily = atomFamily((id: string) =>
+  selectAtom(ordersAtom, (orders) => orders[id])
+)
+
+function OrderItem({ id }: { id: string }) {
+  // Good: cache hit on re-mount — no new atom instance
+  const order = useAtomValue(orderAtomFamily(id))
+
+  return <Text>{order.title}</Text>
+}
+```
+
+**Writable atomFamily with useSetAtom: read + write split**
+
+```tsx
+import { atom, useAtomValue, useSetAtom } from 'jotai'
+import { atomFamily } from 'jotai/utils'
+
+interface CartItem {
+  id: string
+  name: string
+  quantity: number
+}
+
+const cartAtom = atom<Record<string, CartItem>>({})
+
+const cartItemAtomFamily = atomFamily((id: string) =>
+  atom(
+    (get) => get(cartAtom)[id],
+    (get, set, update: Partial<CartItem>) => {
+      const cart = get(cartAtom)
+      set(cartAtom, { ...cart, [id]: { ...cart[id], ...update } })
+    }
+  )
+)
+
+// Read-only: only re-renders when this item's data changes
+function CartItemDisplay({ id }: { id: string }) {
+  const item = useAtomValue(cartItemAtomFamily(id))
+  return <Text>{item.name} x{item.quantity}</Text>
+}
+
+// Write-only: never re-renders from value changes
+function CartItemStepper({ id }: { id: string }) {
+  const setItem = useSetAtom(cartItemAtomFamily(id))
+  return (
+    <Pressable onPress={() => setItem((prev) => ({ quantity: prev.quantity + 1 }))}>
+      <Text>+</Text>
+    </Pressable>
+  )
+}
+```
+
+**When to use atomFamily vs other patterns:**
+
+| Use case                                  | Tool          | Key feature                    |
+
+|-------------------------------------------|---------------|--------------------------------|
+
+| Param-keyed atom for list items           | `atomFamily`  | instance caching by parameter  |
+
+| Split a base array into per-item atoms    | `splitAtom`   | writable atoms from array      |
+
+| Focus on a nested field in an object atom | `focusAtom`   | optics-based lens              |
+
+| Read-only derived slice                   | `selectAtom`  | derived value subscription     |
+
+Reference: [https://jotai.org/docs/utilities/family](https://jotai.org/docs/utilities/family)
+
+### 6.4 Use focusAtom to Subscribe to Nested State Fields
+
+**Impact: MEDIUM (prevents re-renders from unrelated field changes)**
+
+Use `focusAtom` from `jotai-optics` to create a writable sub-atom focused on
+
+a specific field in a nested object. Components subscribing to the focused atom
+
+only re-render when that exact field changes—not when sibling fields update.
+
+**Incorrect: useAtom on entire object — any field change re-renders all consumers**
+
+```tsx
+import { atom, useAtom } from 'jotai'
+
+interface UserProfile {
+  name: string
+  email: string
+  settings: {
+    notifications: {
+      push: boolean
+      email: boolean
+    }
+    theme: 'light' | 'dark'
+  }
+}
+
+const userProfileAtom = atom<UserProfile>({
+  name: '',
+  email: '',
+  settings: {
+    notifications: { push: true, email: true },
+    theme: 'light',
+  },
+})
+
+// Bad: re-renders when name, email, or theme changes
+// even though it only cares about push notifications
+function PushToggle() {
+  const [profile, setProfile] = useAtom(userProfileAtom)
+
+  const toggle = () => {
+    setProfile((prev) => ({
+      ...prev,
+      settings: {
+        ...prev.settings,
+        notifications: {
+          ...prev.settings.notifications,
+          push: !prev.settings.notifications.push,
+        },
+      },
+    }))
+  }
+
+  return (
+    <Switch
+      value={profile.settings.notifications.push}
+      onValueChange={toggle}
+    />
+  )
+}
+```
+
+**Correct: focusAtom — subscribes only to the target field**
+
+```tsx
+import { atom, useAtom } from 'jotai'
+import { focusAtom } from 'jotai-optics'
+
+const userProfileAtom = atom<UserProfile>({
+  name: '',
+  email: '',
+  settings: {
+    notifications: { push: true, email: true },
+    theme: 'light',
+  },
+})
+
+// Focused atom: only tracks settings.notifications.push
+const pushNotificationAtom = focusAtom(userProfileAtom, (optic) =>
+  optic.prop('settings').prop('notifications').prop('push')
+)
+
+// Good: only re-renders when push notification value changes
+function PushToggle() {
+  const [pushEnabled, setPushEnabled] = useAtom(pushNotificationAtom)
+
+  return <Switch value={pushEnabled} onValueChange={setPushEnabled} />
+}
+```
+
+**Creating focused atoms for multiple fields:**
+
+```tsx
+const nameAtom = focusAtom(userProfileAtom, (optic) => optic.prop('name'))
+const emailAtom = focusAtom(userProfileAtom, (optic) => optic.prop('email'))
+const themeAtom = focusAtom(userProfileAtom, (optic) =>
+  optic.prop('settings').prop('theme')
+)
+
+// Each component subscribes only to its own field
+function NameEditor() {
+  const [name, setName] = useAtom(nameAtom)
+  return <TextInput value={name} onChangeText={setName} />
+}
+
+function ThemePicker() {
+  const [theme, setTheme] = useAtom(themeAtom)
+  return <SegmentedControl value={theme} onChange={setTheme} />
+}
+```
+
+**When to use focusAtom vs selectAtom:**
+
+| Use case                     | Tool         | Writable |
+
+|------------------------------|--------------|----------|
+
+| Read + write a nested field  | `focusAtom`  | yes      |
+
+| Read-only derived slice      | `selectAtom` | no       |
+
+Reference: [https://jotai.org/docs/extensions/optics](https://jotai.org/docs/extensions/optics)
+
+### 6.5 Use splitAtom for Independent List Item Updates
+
+**Impact: HIGH (prevents sibling re-renders on single item changes)**
+
+Use `splitAtom` to create independent writable atoms for each item in a list.
+
+When one item changes, only that item's component re-renders—siblings stay
+
+untouched.
+
+Unlike `selectAtom` (read-only derived atom for extracting a slice),
+
+`splitAtom` gives each item a `PrimitiveAtom` that supports both read and
+
+write independently.
+
+**Incorrect: useAtom on whole list — all items re-render on any change**
+
+```tsx
+import { atom, useAtom } from 'jotai'
+
+interface Todo {
+  id: string
+  text: string
+  done: boolean
+}
+
+const todosAtom = atom<Todo[]>([])
+
+function TodoList() {
+  const [todos, setTodos] = useAtom(todosAtom)
+
+  const toggle = (id: string) => {
+    // Bad: creates a new array → parent re-renders → all items re-render
+    setTodos((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t))
+    )
+  }
+
+  return (
+    <FlatList
+      data={todos}
+      renderItem={({ item }) => (
+        <TodoItem todo={item} onToggle={() => toggle(item.id)} />
+      )}
+    />
+  )
+}
+```
+
+**Correct: splitAtom — each item has its own writable atom**
+
+```tsx
+import { atom, useAtom, useAtomValue } from 'jotai'
+import { splitAtom } from 'jotai/utils'
+import type { PrimitiveAtom } from 'jotai'
+
+interface Todo {
+  id: string
+  text: string
+  done: boolean
+}
+
+const todosAtom = atom<Todo[]>([])
+const todoAtomsAtom = splitAtom(todosAtom)
+
+function TodoList() {
+  const todoAtoms = useAtomValue(todoAtomsAtom)
+
+  return (
+    <FlatList
+      data={todoAtoms}
+      renderItem={({ item }) => <TodoItem todoAtom={item} />}
+      keyExtractor={(item) => `${item}`}
+    />
+  )
+}
+
+// Good: only this component re-renders when its todo changes
+function TodoItem({ todoAtom }: { todoAtom: PrimitiveAtom<Todo> }) {
+  const [todo, setTodo] = useAtom(todoAtom)
+
+  const toggle = () => {
+    setTodo((prev) => ({ ...prev, done: !prev.done }))
+  }
+
+  return (
+    <Pressable onPress={toggle}>
+      <Text style={todo.done ? styles.done : undefined}>{todo.text}</Text>
+    </Pressable>
+  )
+}
+```
+
+**When to use splitAtom vs selectAtom:**
+
+| Use case                         | Tool        | Writable |
+
+|----------------------------------|-------------|----------|
+
+| Each list item reads + writes    | `splitAtom` | yes      |
+
+| Derive a single value from list  | `selectAtom`| no       |
+
+| Filter/search within list items  | `selectAtom`| no       |
+
+Reference: [https://jotai.org/docs/utilities/split](https://jotai.org/docs/utilities/split)
+
+### 6.6 Use useAtomValue and useSetAtom for Minimal Subscriptions
+
+**Impact: MEDIUM (avoids unnecessary re-renders from unused subscriptions)**
+
+When a component only reads an atom, use `useAtomValue`. When it only writes,
+
+use `useSetAtom`. `useSetAtom` does not subscribe to value changes—the
+
+component won't re-render when the atom's value updates.
+
+`useAtom` subscribes to both read and write. Use it only when the component
+
+genuinely needs both.
+
+**Incorrect: useAtom when only writing — subscribes to value changes needlessly**
+
+```tsx
+import { useAtom } from 'jotai'
+import { countAtom } from './atoms'
+
+// Bad: this component re-renders every time countAtom changes,
+// even though it never reads the value
+function IncrementButton() {
+  const [count, setCount] = useAtom(countAtom)
+
+  return <Button title="+" onPress={() => setCount((c) => c + 1)} />
+}
+```
+
+**Correct: useSetAtom — no subscription, zero re-renders from value changes**
+
+```tsx
+import { useSetAtom } from 'jotai'
+import { countAtom } from './atoms'
+
+// Good: no subscription to countAtom's value — never re-renders from count changes
+function IncrementButton() {
+  const setCount = useSetAtom(countAtom)
+
+  return <Button title="+" onPress={() => setCount((c) => c + 1)} />
+}
+```
+
+**Correct: useAtomValue — read-only subscription**
+
+```tsx
+import { useAtomValue } from 'jotai'
+import { countAtom } from './atoms'
+
+// Good: explicitly read-only — makes intent clear
+function CountDisplay() {
+  const count = useAtomValue(countAtom)
+
+  return <Text>{count}</Text>
+}
+```
+
+**Quick reference:**
+
+| Hook           | Reads | Writes | Subscribes to changes |
+
+|----------------|-------|--------|-----------------------|
+
+| `useAtom`      | yes   | yes    | yes                   |
+
+| `useAtomValue`  | yes   | no     | yes                   |
+
+| `useSetAtom`   | no    | yes    | no                    |
+
+Reference: [https://jotai.org/docs/core/use-atom](https://jotai.org/docs/core/use-atom)
 
 ---
 
