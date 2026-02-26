@@ -1,7 +1,7 @@
 {
   "name": "react-best-practices-build",
   "version": "1.0.0",
-  "description": "Build tooling for agent skills (React, React Native, Composition Patterns, Web Design Guidelines)",
+  "description": "Build tooling for agent skills (React, React Native, Composition Patterns, Web Design Guidelines, Figma ddocdoc Design)",
   "type": "module",
   "scripts": {
     "build": "pnpm build-agents && pnpm extract-tests",
@@ -11,6 +11,7 @@
     "build-rn": "tsx src/build.ts --skill=react-native-skills",
     "build-composition": "tsx src/build.ts --skill=composition-patterns",
     "build-web-design": "tsx src/build.ts --skill=web-design-guidelines",
+    "build-figma-design": "tsx src/build.ts --skill=figma-ddocdoc-app",
     "validate": "tsx src/validate.ts",
     "extract-tests": "tsx src/extract-tests.ts",
     "migrate": "tsx src/migrate.ts",
