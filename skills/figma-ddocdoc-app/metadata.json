@@ -1,0 +1,7 @@
+{
+  "version": "1.0.0",
+  "organization": "ddocdoc",
+  "date": "February 2026",
+  "abstract": "ddocdoc-app React Native 프로젝트의 디자인 시스템 레퍼런스. 피그마 컴포넌트명과 코드 컴포넌트의 매핑, NativeWind 컬러 토큰 사용 규칙, 스타일링 컨벤션을 포함합니다.",
+  "references": []
+}

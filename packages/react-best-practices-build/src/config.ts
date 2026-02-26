@@ -101,6 +101,19 @@ export const SKILLS: Record<string, SkillConfig> = {
       styling: 9,
     },
   },
+  'figma-ddocdoc-app': {
+    name: 'figma-ddocdoc-app',
+    title: 'Figma ddocdoc Design System',
+    description: 'ddocdoc-app React Native design system',
+    skillDir: join(SKILLS_DIR, 'figma-ddocdoc-app'),
+    rulesDir: join(SKILLS_DIR, 'figma-ddocdoc-app/rules'),
+    metadataFile: join(SKILLS_DIR, 'figma-ddocdoc-app/metadata.json'),
+    outputFile: join(SKILLS_DIR, 'figma-ddocdoc-app/AGENTS.md'),
+    sectionMap: {
+      code: 1,
+      component: 2,
+    },
+  },
 }
 
 // Default skill (for backwards compatibility)
