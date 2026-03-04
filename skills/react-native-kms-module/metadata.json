@@ -1,0 +1,7 @@
+{
+  "version": "1.0.0",
+  "organization": "ddocdoc",
+  "date": "March 2026",
+  "abstract": "AWS KMS를 사용하여 민감한 데이터를 안전하게 암호화하고 복호화하는 React Native 네이티브 모듈. 엔벨로프 암호화 패턴과 AES-256-ECB 로컬 암호화를 사용합니다.",
+  "references": ["https://rn-libs.fe.ddocdoc.dev/docs/react-native-kms-module"]
+}

@@ -1,0 +1,7 @@
+{
+  "version": "1.0.0",
+  "organization": "ddocdoc",
+  "date": "March 2026",
+  "abstract": "iOS UserDefaults와 Android SharedPreferences에 대한 통합 인터페이스. 플랫폼별 키 매핑, 동적 키, JSON 변환, 타임스탬프 통일 기능을 제공합니다.",
+  "references": ["https://rn-libs.fe.ddocdoc.dev/docs/react-native-device-data-module"]
+}

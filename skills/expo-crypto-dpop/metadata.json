@@ -1,0 +1,7 @@
+{
+  "version": "1.0.0",
+  "organization": "ddocdoc",
+  "date": "March 2026",
+  "abstract": "RFC 9449 표준 기반 DPoP 인증 모듈. EC P-256 키 쌍 생성, DPoP 증명 JWT 생성, expo-secure-store 기반 보안 키 저장을 제공합니다.",
+  "references": ["https://rn-libs.fe.ddocdoc.dev/docs/expo-crypto-dpop"]
+}

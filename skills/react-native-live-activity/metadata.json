@@ -1,0 +1,7 @@
+{
+  "version": "1.0.0",
+  "organization": "ddocdoc",
+  "date": "March 2026",
+  "abstract": "iOS Live Activity를 활용한 병원 접수 상태 실시간 표시 모듈. 잠금 화면과 Dynamic Island에서 접수 대기, 진료 중, 완료 상태를 표시합니다.",
+  "references": ["https://rn-libs.fe.ddocdoc.dev/docs/react-native-live-activity"]
+}

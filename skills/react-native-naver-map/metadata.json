@@ -1,0 +1,7 @@
+{
+  "version": "1.0.0",
+  "organization": "ddocdoc",
+  "date": "March 2026",
+  "abstract": "네이버 지도 SDK를 React Native에서 사용할 수 있도록 래핑한 라이브러리. 10개 오버레이 컴포넌트, 카메라 제어, 마커 클러스터링, 위치 추적 기능을 포함합니다.",
+  "references": ["https://rn-libs.fe.ddocdoc.dev/docs/react-native-naver-map"]
+}
