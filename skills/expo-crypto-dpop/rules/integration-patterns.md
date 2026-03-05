@@ -7,15 +7,24 @@ tags: [dpop, axios, interceptor, nonce, token-refresh, integration]
 
 **1. Axios 요청 인터셉터**
 
-모든 API 요청에 자동으로 DPoP 헤더를 추가:
+DPoP가 필요한 요청에만 선택적으로 DPoP 헤더를 추가. 요청 config에 `dpop: true`를 설정한 경우에만 적용된다:
 
 ```typescript
-import axios from 'axios';
+import axios, { InternalAxiosRequestConfig } from 'axios';
 import { createProof } from 'expo-crypto-dpop';
+
+// Axios config 타입 확장
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    dpop?: boolean;
+  }
+}
 
 const apiClient = axios.create({ baseURL: 'https://api.example.com' });
 
 apiClient.interceptors.request.use(async (config) => {
+  if (!config.dpop) return config;
+
   const url = new URL(config.url!, config.baseURL);
   const htu = url.origin + url.pathname; // 쿼리 파라미터 제외!
 
@@ -28,6 +37,16 @@ apiClient.interceptors.request.use(async (config) => {
   config.headers['DPoP'] = proof;
   return config;
 });
+```
+
+**사용 예시:**
+
+```typescript
+// DPoP 적용 O
+apiClient.get('/protected/resource', { dpop: true });
+
+// DPoP 적용 X (기본값)
+apiClient.get('/public/resource');
 ```
 
 > ⚠️ `htu`는 RFC 9449에 따라 `origin + pathname`만 사용. 쿼리 파라미터와 프래그먼트 포함 금지.
@@ -47,6 +66,9 @@ apiClient.interceptors.response.use(
     return response;
   },
   async (error) => {
+    const config = error.config;
+    if (!config?.dpop) return Promise.reject(error);
+
     if (error.response?.status === 401) {
       const wwwAuth = error.response.headers['www-authenticate'] || '';
       const nonceMatch = wwwAuth.match(/DPoP-Nonce="([^"]+)"/);
@@ -54,7 +76,6 @@ apiClient.interceptors.response.use(
       if (nonceMatch) {
         dpopNonce = nonceMatch[1];
         // nonce를 포함하여 재시도
-        const config = error.config;
         const url = new URL(config.url!, config.baseURL);
         const proof = await createProof({
           htm: config.method!.toUpperCase(),
