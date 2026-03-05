@@ -84,6 +84,89 @@ React composition patterns that scale. Helps avoid boolean prop proliferation th
 - Composing internals for flexibility
 - Avoiding prop drilling
 
+### react-native-naver-map
+
+네이버 지도 SDK React Native 래퍼. 10개 오버레이 컴포넌트, 카메라 제어, 마커 클러스터링, 위치 추적 기능 포함.
+
+**Use when:**
+- 네이버 지도 컴포넌트 구현 시
+- 마커, 경로선, 폴리곤 등 오버레이 추가 시
+- 카메라 애니메이션, 좌표 변환 작업 시
+- 마커 클러스터링 구현 시
+
+**Categories covered:**
+- Component API (10 components: NaverMapView, Marker, InfoWindow, Path, Polyline, Polygon, Circle, Arrowhead, MultiPath, Ground)
+- Types & Enums (Camera, Coord, Region, MapType, LocationTrackingMode)
+- Troubleshooting (iOS/Android build, Expo, clustering)
+
+### expo-crypto-dpop
+
+RFC 9449 DPoP 인증 모듈. EC P-256 키 생성, DPoP 증명 JWT 생성, 보안 키 저장 기능.
+
+**Use when:**
+- DPoP 인증 구현 시
+- OAuth 2.0 토큰 바인딩이 필요할 때
+- Axios 인터셉터에 DPoP 헤더 추가 시
+
+**Categories covered:**
+- API Reference (ensureKeyPair, createProof, deleteKeyPair)
+- DPoP JWT Structure (ES256, ath claim, nonce)
+- Integration Patterns (Axios interceptor, nonce handling, token refresh)
+
+### react-native-kms-module
+
+AWS KMS 네이티브 암호화/복호화 모듈. 엔벨로프 암호화 패턴, AES-256-ECB 로컬 암호화.
+
+**Use when:**
+- AWS KMS를 사용한 데이터 암호화/복호화 시
+- 엔벨로프 암호화 패턴 이해가 필요할 때
+
+**Categories covered:**
+- API Reference (init, encrypt, decrypt)
+- Envelope Encryption Architecture
+- Security Guidelines (credential management)
+
+### react-native-coucon-sdk
+
+Coucon SAS 인증 TurboModule SDK. NativeEventEmitter 기반 비동기 결과 처리.
+
+**Use when:**
+- Coucon SAS 인증 구현 시
+- TurboModule 기반 네이티브 모듈 연동 시
+
+**Categories covered:**
+- API Reference (initialize, run, addOnSASRunCompletedListener)
+- Critical Pattern (listener-before-run ordering)
+- Event Structure (onSASRunCompleted)
+
+### react-native-device-data-module
+
+iOS UserDefaults / Android SharedPreferences 통합 인터페이스. 플랫폼별 키 매핑, 동적 키, 값 변환.
+
+**Use when:**
+- 네이티브 스토리지에 접근할 때
+- 플랫폼 간 키 매핑이 필요할 때
+- 토큰, 디바이스 ID 등 저장된 값을 읽을 때
+
+**Categories covered:**
+- Unified Key System (13+ keys)
+- Platform Key Mapping (iOS/Android full table)
+- Edge Cases (dynamic keys, JSON transform, timestamp normalization)
+
+### react-native-live-activity
+
+iOS Live Activity로 병원 접수 상태를 잠금 화면과 Dynamic Island에 실시간 표시.
+
+**Use when:**
+- iOS Live Activity 구현 시
+- 병원 접수 상태 실시간 표시 시
+- ActivityKit 관련 작업 시
+
+**Categories covered:**
+- API Reference (requestLiveActivities, updateReceptionState, endAllActivities, areActivitiesEnabled)
+- State Machine (pending → waiting → inProgress → completed)
+- Type Definitions (ReceptionStateLiveActivityItem, UpdateReceptionStateParams)
+
 ### vercel-deploy-claimable
 
 Deploy applications and websites to Vercel instantly. Designed for use with claude.ai and Claude Desktop to enable deployments directly from conversations. Deployments are "claimable" - users can transfer ownership to their own Vercel account.
