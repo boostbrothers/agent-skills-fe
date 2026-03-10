@@ -24,6 +24,22 @@ echo "JIRA issue: ${JIRA_ISSUE:-none}" >&2
 echo "Gathering commits since $BASE_BRANCH..." >&2
 COMMITS=$(git log "${BASE_BRANCH}..HEAD" --oneline 2>/dev/null || true)
 
+# Detect commit type from commits (feat, fix, chore only per commitlint rules)
+COMMIT_TYPE=""
+if echo "$COMMITS" | grep -qiE '^[a-f0-9]+ feat'; then
+  COMMIT_TYPE="feat"
+elif echo "$COMMITS" | grep -qiE '^[a-f0-9]+ fix'; then
+  COMMIT_TYPE="fix"
+elif echo "$COMMITS" | grep -qiE '^[a-f0-9]+ chore'; then
+  COMMIT_TYPE="chore"
+else
+  # Fallback: detect from branch prefix
+  BRANCH_PREFIX=$(echo "$CURRENT_BRANCH" | grep -oE '^(feat|fix|chore)' | head -n 1 || true)
+  COMMIT_TYPE="${BRANCH_PREFIX:-chore}"
+fi
+
+echo "Commit type: ${COMMIT_TYPE:-unknown}" >&2
+
 # Diff stats
 echo "Gathering diff stats..." >&2
 DIFF_STAT=$(git diff "${BASE_BRANCH}...HEAD" --stat 2>/dev/null || true)
@@ -42,6 +58,7 @@ jq -n \
   --arg branch "$CURRENT_BRANCH" \
   --arg base_branch "$BASE_BRANCH" \
   --arg jira_issue "$JIRA_ISSUE" \
+  --arg commit_type "$COMMIT_TYPE" \
   --arg commits "$COMMITS" \
   --arg diff_stat "$DIFF_STAT" \
   --arg diff_content "$DIFF_CONTENT" \
@@ -50,6 +67,7 @@ jq -n \
     branch: $branch,
     base_branch: $base_branch,
     jira_issue: $jira_issue,
+    commit_type: $commit_type,
     commits: $commits,
     diff_stat: $diff_stat,
     diff_content: $diff_content,

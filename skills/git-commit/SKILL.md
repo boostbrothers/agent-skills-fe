@@ -14,7 +14,7 @@ metadata:
 
 1. **컨텍스트 수집:** 스크립트를 실행해 브랜치, staged diff, 최근 커밋 정보를 수집합니다.
    ```bash
-   bash /mnt/skills/user/git-commit/scripts/generate-commit-msg.sh
+   bash scripts/generate-commit-msg.sh
    ```
 2. **분석:** staged diff를 분석해 변경 유형(feat/fix/chore)과 한국어 설명을 결정합니다.
 3. **초안 제시:** 커밋 메시지 초안을 사용자에게 보여주고 확인을 요청합니다.
@@ -54,15 +54,17 @@ feat: FE-4645, DPoP 선택적 적용을 위한 Axios 인터셉터 패턴 개선
 - 기존 인증 플로우와의 호환성 유지
 - 단위 테스트 추가
 
-Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+Co-Authored-By: {git user.name} <{git user.email}>
 ```
 
 ## Important Rules
 
 - 커밋 메시지는 반드시 다음으로 끝나야 합니다:
   ```
-  Co-Authored-By: TAE HONG LEE <dea972@naver.com>
+  Co-Authored-By: {git user.name} <{git user.email}>
   ```
+  - `git config user.name`과 `git config user.email`에서 가져옵니다.
+  - 예시: `Co-Authored-By: TAE HONG LEE <dea972@naver.com>`
 - staged 변경사항이 없으면 사용자에게 알립니다.
 - 설명은 가능하면 한국어로 작성합니다 (영어가 더 명확한 경우 영어 허용).
 
