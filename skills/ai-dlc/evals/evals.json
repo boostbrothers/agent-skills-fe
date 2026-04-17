@@ -1,0 +1,49 @@
+{
+  "skill_name": "ai-dlc",
+  "evals": [
+    {
+      "id": 0,
+      "name": "greenfield-pet-healthcare",
+      "prompt": "반려동물 헬스케어 플랫폼을 만들고 싶어. 반려동물 건강 데이터를 추적하고, 수의사 예약을 관리하고, AI로 건강 이상 징후를 조기 감지하는 시스템이야.",
+      "expected_output": "aidlc-docs/ 폴더 구조가 생성되고, Inception phase의 산출물(intent.md, user stories, units, NFRs, bolt plan)이 체계적으로 작성됨",
+      "files": [],
+      "assertions": [
+        {"name": "folder-structure", "description": "aidlc-docs/ 하위 폴더 구조(plans, requirements, story-artifacts, design-artifacts)가 생성됨"},
+        {"name": "intent-document", "description": "Intent 문서가 존재하고 비즈니스 목표, 사용자, 성공 지표를 포함"},
+        {"name": "user-stories-exist", "description": "최소 3개 이상의 User Story가 acceptance criteria와 함께 작성됨"},
+        {"name": "units-decomposed", "description": "2개 이상의 독립적 Unit으로 분해됨"},
+        {"name": "nfr-documented", "description": "NFR(비기능 요구사항) 문서가 존재"},
+        {"name": "bolt-plan", "description": "Bolt 실행 계획이 작성됨"}
+      ]
+    },
+    {
+      "id": 1,
+      "name": "brownfield-recommendation-engine",
+      "prompt": "기존 이커머스 앱에 AI 기반 상품 추천 엔진을 추가하려고 해. 현재 Spring Boot 백엔드에 PostgreSQL을 쓰고 있어.",
+      "expected_output": "Brown-field 시나리오를 인식하고, 기존 시스템 elevation 단계를 포함한 Inception phase 산출물이 작성됨",
+      "files": [],
+      "assertions": [
+        {"name": "brownfield-recognition", "description": "기존 시스템(Spring Boot, PostgreSQL)을 인식하고 Brown-field 접근 적용"},
+        {"name": "elevation-step", "description": "기존 시스템의 elevation(역공학 모델링) 단계가 포함되거나 언급됨"},
+        {"name": "integration-awareness", "description": "기존 시스템과의 통합 지점이 문서화됨"},
+        {"name": "intent-document", "description": "Intent 문서가 존재"},
+        {"name": "units-decomposed", "description": "Unit 분해가 수행됨"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "direct-domain-design",
+      "prompt": "이미 유저 스토리는 다 정리했어. 주문 관리 Unit의 도메인 모델을 설계해줘.",
+      "expected_output": "Inception을 건너뛰고 Construction phase의 Domain Design 단계로 직접 진입하여 DDD 기반 도메인 모델이 작성됨",
+      "files": [],
+      "assertions": [
+        {"name": "phase-skip", "description": "Inception을 건너뛰고 Construction의 Domain Design으로 직접 진입"},
+        {"name": "ddd-entities", "description": "Entity가 정의됨 (예: Order, OrderItem 등)"},
+        {"name": "ddd-aggregates", "description": "Aggregate Root가 식별됨"},
+        {"name": "ddd-value-objects", "description": "Value Object가 정의됨 (예: Money, Address 등)"},
+        {"name": "ddd-domain-events", "description": "Domain Event가 정의됨 (예: OrderPlaced, OrderCancelled 등)"},
+        {"name": "domain-model-file", "description": "도메인 모델 문서 파일이 생성됨"}
+      ]
+    }
+  ]
+}
